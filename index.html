@@ -2742,7 +2742,7 @@ function renderJournalCalendar(dateStr, aid){
       ${weekNames.map(w=>`<div class="journal-weekday">${w}</div>`).join('')}
       ${model.cells.map(c=>{
         const bg = c.pnl>0?`background:linear-gradient(180deg,rgba(20,83,45,.42),rgba(8,14,25,.98));` : c.pnl<0?`background:linear-gradient(180deg,rgba(127,29,29,.38),rgba(8,14,25,.98));` : '';
-        return `<div class="journal-day-cell ${c.isSelected?'is-selected':''} ${c.isToday?'is-today':''} ${c.inMonth?'':'is-other'}" style="${bg}" onmouseenter="showJournalPreview('${c.date}', this)" onmouseleave="hideJournalPreview()" onclick="loadJournalDate('${c.date}');showJournalPreview('${c.date}', this, true)">
+        return `<div class="journal-day-cell ${c.isSelected?'is-selected':''} ${c.isToday?'is-today':''} ${c.inMonth?'':'is-other'}" style="${bg}" onmouseenter="showJournalPreview('${c.date}', this)" onmouseleave="hideJournalPreview()" onclick="loadJournalDate('${c.date}');${c.trades.length?`openDayTradesPanel('${c.date}')`:``}">
           <div class="journal-day-num">${c.day}</div>
           ${c.journal?`<div class="journal-day-journal">Saved</div>`:''}
           ${c.trades.length?`<div class="journal-day-pnl" style="color:${pnlC(c.pnl)}">${$m(c.pnl)}</div><div class="journal-day-meta">${c.trades.length} trades</div>`:`<div class="journal-day-empty">${c.journal?'No trades':'Add journal'}</div>`}
@@ -2814,7 +2814,10 @@ function renderJournal(){
   const dayTrades = S.trades.filter(t=>t.date===j.date && t.aid===ac.id).sort((a,b)=>(a.time||'')>(b.time||'')?1:-1);
   document.getElementById('page-content').innerHTML = `
   <div class="section-hd">
-    <div><div class="page-title">Journal</div></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      ${S._journalReturnFrom==='compliance'?`<button class="btn-sm" style="color:var(--purple);border-color:rgba(124,92,191,.4);background:rgba(124,92,191,.08);" onclick="backToCompliance()">← 返回合规审核</button>`:''}
+      <div class="page-title">Journal</div>
+    </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
       <input type="date" id="journal-date" value="${j.date}" style="width:auto;" onchange="loadJournalDate(this.value)">
       <button class="btn-sm" onclick="jumpJournalToday()">今天</button>
@@ -2938,6 +2941,125 @@ window.journalMonthNav=function(dir){
   const target = new Date(base.getFullYear(), base.getMonth(), 1, 12, 0, 0).toISOString().slice(0,10);
   loadJournalDate(target);
 }
+// ── 合规→Journal 跳转 ──────────────────────────────────────────────
+window.viewJournalFromCompliance=function(date, aid){
+  S._journalReturnFrom='compliance';
+  if(aid) S.aid=aid;
+  renderSidebar();
+  S.journalDate=date;
+  goPage('journal');
+};
+window.backToCompliance=function(){
+  S._journalReturnFrom=null;
+  goPage('compliance');
+};
+
+// ── 当日交易面板 ────────────────────────────────────────────────────
+window.openDayTradesPanel=function(date){
+  const ac=ga(); if(!ac) return;
+  const trades=S.trades.filter(t=>t.date===date&&t.aid===ac.id).sort((a,b)=>(a.time||'')>(b.time||'')?1:-1);
+  if(!trades.length) return;
+  const totalPnl=trades.reduce((s,t)=>s+(t.pnl||0),0);
+  // Build equity curve data
+  let run=0; const pts=trades.map(t=>{run+=(t.pnl||0);return run;});
+  const minY=Math.min(0,...pts), maxY=Math.max(0,...pts);
+  const range=maxY-minY||1;
+  const W=360,H=90,pad=8;
+  const sx=i=>pad+(i/(trades.length-1||1))*(W-pad*2);
+  const sy=v=>H-pad-(v-minY)/range*(H-pad*2);
+  const pathD=pts.map((v,i)=>`${i===0?'M':'L'}${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(' ');
+  const zeroY=sy(0).toFixed(1);
+  const lineColor=totalPnl>=0?'#2bab85':'#e85555';
+  const fillColor=totalPnl>=0?'rgba(43,171,133,.18)':'rgba(232,85,85,.18)';
+
+  // Remove existing panel
+  document.getElementById('day-trades-panel')?.remove();
+  const el=document.createElement('div');
+  el.id='day-trades-panel';
+  el.style.cssText='position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);';
+  el.innerHTML=`
+    <div style="background:#10131a;border:1px solid #1c2030;border-radius:8px;width:min(680px,95vw);max-height:85vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.6);">
+      <div style="padding:16px 18px 12px;border-bottom:1px solid #1c2030;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+        <div>
+          <div style="font-size:15px;font-weight:700;">Day Performance: ${date}</div>
+          <div style="font-size:12px;color:#5a6070;margin-top:2px;">${esc(ac.name)} · ${trades.length} trades</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="font-size:20px;font-weight:700;font-family:monospace;color:${pnlC(totalPnl)}">${$m(totalPnl)}</div>
+          <button onclick="document.getElementById('day-trades-panel').remove()" style="background:none;border:none;color:#5a6070;cursor:pointer;font-size:20px;line-height:1;padding:4px 6px;">×</button>
+        </div>
+      </div>
+      ${trades.length>1?`<div style="padding:14px 18px 4px;flex-shrink:0;">
+        <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;">
+          <defs><linearGradient id="dpg" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="${lineColor}" stop-opacity=".4"/><stop offset="100%" stop-color="${lineColor}" stop-opacity="0"/></linearGradient></defs>
+          <line x1="${pad}" y1="${zeroY}" x2="${W-pad}" y2="${zeroY}" stroke="#1c2030" stroke-width="1" stroke-dasharray="4,3"/>
+          <path d="${pathD} L${sx(trades.length-1).toFixed(1)},${zeroY} L${sx(0).toFixed(1)},${zeroY} Z" fill="url(#dpg)"/>
+          <path d="${pathD}" fill="none" stroke="${lineColor}" stroke-width="1.8" stroke-linejoin="round"/>
+        </svg>
+      </div>`:''}
+      <div style="overflow-y:auto;flex:1;padding:0 18px 14px;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead><tr style="color:#5a6070;font-size:10px;text-transform:uppercase;letter-spacing:.06em;">
+            <th style="padding:8px 6px 6px;text-align:left;border-bottom:1px solid #1c2030;">时间</th>
+            <th style="padding:8px 6px 6px;text-align:left;border-bottom:1px solid #1c2030;">品种</th>
+            <th style="padding:8px 6px 6px;text-align:center;border-bottom:1px solid #1c2030;">方向</th>
+            <th style="padding:8px 6px 6px;text-align:center;border-bottom:1px solid #1c2030;">手数</th>
+            <th style="padding:8px 6px 6px;text-align:right;border-bottom:1px solid #1c2030;">净盈亏</th>
+            <th style="padding:8px 6px 6px;text-align:right;border-bottom:1px solid #1c2030;">合规状态</th>
+          </tr></thead>
+          <tbody>${trades.map((t,i)=>{
+            const cs=t.compliance;
+            const st=cs?.userOverride||cs?.status||'compliant';
+            const statusLabel=st==='violation'?'🚫 违规':st==='suspected'?'⚠ 疑似':'✓ 合规';
+            const statusColor=st==='violation'?'#e85555':st==='suspected'?'#e8a020':'#2bab85';
+            const runPnl=pts[i];
+            return`<tr id="dtp-row-${t.id}" style="border-bottom:1px solid #1c2030;">
+              <td style="padding:8px 6px;color:#5a6070;font-family:monospace;">${t.time||'—'}</td>
+              <td style="padding:8px 6px;font-weight:600;">${esc(t.sym||'?')}</td>
+              <td style="padding:8px 6px;text-align:center;"><span class="badge b-${(t.dir||'').toLowerCase()}">${t.dir||'?'}</span></td>
+              <td style="padding:8px 6px;text-align:center;color:#c9cdd8;">${t.c||1}</td>
+              <td style="padding:8px 6px;text-align:right;font-family:monospace;font-weight:700;color:${pnlC(t.pnl||0)}">${$m(t.pnl||0)}</td>
+              <td style="padding:8px 6px;text-align:right;">
+                <div id="dtp-comp-${t.id}" style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+                  <span style="color:${statusColor};font-size:11px;font-weight:600;cursor:pointer;" onclick="dtpToggleEdit('${t.id}')">${statusLabel} ✎</span>
+                  <div id="dtp-edit-${t.id}" style="display:none;flex-direction:column;gap:3px;align-items:flex-end;">
+                    <button onclick="dtpSetComp('${t.id}','compliant')" style="background:rgba(43,171,133,.1);border:1px solid rgba(43,171,133,.35);color:#2bab85;border-radius:3px;padding:2px 8px;font-size:10px;cursor:pointer;">✓ 合规</button>
+                    <button onclick="dtpSetComp('${t.id}','suspected')" style="background:rgba(232,160,32,.1);border:1px solid rgba(232,160,32,.35);color:#e8a020;border-radius:3px;padding:2px 8px;font-size:10px;cursor:pointer;">⚠ 疑似</button>
+                    <button onclick="dtpSetComp('${t.id}','violation')" style="background:rgba(232,85,85,.1);border:1px solid rgba(232,85,85,.35);color:#e85555;border-radius:3px;padding:2px 8px;font-size:10px;cursor:pointer;">🚫 违规</button>
+                    <button onclick="dtpToggleEdit('${t.id}')" style="background:none;border:none;color:#5a6070;font-size:10px;cursor:pointer;">取消</button>
+                  </div>
+                </div>
+              </td>
+            </tr>`;}).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+  el.addEventListener('click', e=>{ if(e.target===el) el.remove(); });
+  document.body.appendChild(el);
+};
+
+// ── 当日交易面板合规编辑 ───────────────────────────────────────────
+window.dtpToggleEdit=function(tid){
+  const el=document.getElementById(`dtp-edit-${tid}`);
+  if(!el) return;
+  el.style.display=el.style.display==='none'?'flex':'none';
+};
+window.dtpSetComp=async function(tid, newStatus){
+  const trade=S.trades.find(t=>t.id===tid); if(!trade) return;
+  const cs=trade.compliance||{};
+  const updated={...cs, userOverride: newStatus==='compliant'?'compliant': newStatus==='violation'?'violation':'suspected',
+    status: newStatus==='compliant'?'compliant': newStatus==='violation'?'violation':'suspected'};
+  trade.compliance=updated;
+  if(window.fbSetDoc) await window.fbSetDoc('trades', tid, trade);
+  // Update UI in panel
+  const statusLabel=newStatus==='violation'?'🚫 违规':newStatus==='suspected'?'⚠ 疑似':'✓ 合规';
+  const statusColor=newStatus==='violation'?'#e85555':newStatus==='suspected'?'#e8a020':'#2bab85';
+  const wrap=document.getElementById(`dtp-comp-${tid}`);
+  if(wrap) wrap.querySelector('span').style.color=statusColor, wrap.querySelector('span').textContent=`${statusLabel} ✎`;
+  document.getElementById(`dtp-edit-${tid}`).style.display='none';
+  updateHeader();
+};
+
 window.jumpJournalToday=function(){ loadJournalDate(new Date().toISOString().slice(0,10)); }
 window.loadJournalDate=function(date){
   S.journalDate = date;
@@ -3341,6 +3463,7 @@ ${S.accounts.map(ac=>{
           </ul>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+          <button class="btn-sm" style="color:var(--purple);border-color:rgba(124,92,191,.4);background:rgba(124,92,191,.08);" onclick="viewJournalFromCompliance('${t.date}','${t.aid}')">📝 当日Journal</button>
           <button class="btn-sm" style="color:var(--green);border-color:rgba(74,222,128,.4);" onclick="setCompliance('${t.id}','confirm')">✅ 确认</button>
           <button class="btn-sm" style="color:var(--blue);border-color:rgba(96,165,250,.4);" onclick="setCompliance('${t.id}','to_compliant')">修正合规</button>
           <button class="btn-sm" style="color:var(--amber);border-color:rgba(251,191,36,.4);" onclick="setCompliance('${t.id}','to_suspected')">标为疑似</button>
