@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
@@ -371,10 +371,9 @@ tbody tr:hover td{background:rgba(41,98,255,.04);}
   <div id="main">
     <div id="sidebar">
       <div class="nav-sec">导航</div>
-      <div class="nav-item active" id="nav-overview" onclick="goPage('overview')"><span class="ic">📊</span>总览</div>
+      <div class="nav-item active" id="nav-overview" onclick="goPage('roadmap')"><span class="ic">🧭</span>Trading OS</div>
       <div class="nav-item" id="nav-trades" onclick="goPage('trades')"><span class="ic">📋</span>交易记录</div>
       <div class="nav-item" id="nav-stats" onclick="goPage('stats')"><span class="ic">📈</span>统计分析</div>
-      <div class="nav-item" id="nav-roadmap" onclick="goPage('roadmap')"><span class="ic">🧭</span>Trading OS</div>
       <div class="nav-item" id="nav-missed" onclick="goPage('missed')"><span class="ic">🎯</span>Missed Trades</div>
       <div class="nav-item" id="nav-journal" onclick="goPage('journal')"><span class="ic">📝</span>Journal</div>
       <div class="nav-item" id="nav-costs" onclick="goPage('costs')"><span class="ic">💰</span>费用总览</div>
@@ -382,6 +381,7 @@ tbody tr:hover td{background:rgba(41,98,255,.04);}
       <div class="nav-item" id="nav-compliance" onclick="goPage('compliance')"><span class="ic">⚖</span>合规审核 <span class="nav-badge" id="comp-badge" style="display:none;"></span></div>
       <div class="nav-item" id="nav-import" onclick="goPage('import')"><span class="ic">📥</span>导入记录</div>
       <div class="nav-item" id="nav-risk" onclick="goPage('risk')"><span class="ic">⚠️</span>风控看板</div>
+      <div class="nav-item" id="nav-settings" onclick="goPage('settings')"><span class="ic">⚙</span>时间设置</div>
       <div class="nav-sec" style="margin-top:6px;">账户</div>
       <div id="acct-list"></div>
     </div>
@@ -392,12 +392,10 @@ tbody tr:hover td{background:rgba(41,98,255,.04);}
   </div>
 
   <div id="mobile-nav">
-    <button class="mob-btn active" id="mob-overview" onclick="goPage('overview')"><span class="mi">📊</span>总览</button>
+    <button class="mob-btn active" id="mob-overview" onclick="goPage('roadmap')"><span class="mi">🧭</span>OS</button>
     <button class="mob-btn" id="mob-trades" onclick="goPage('trades')"><span class="mi">📋</span>记录</button>
     <button class="mob-btn" id="mob-stats" onclick="goPage('stats')"><span class="mi">📈</span>统计</button>
     <button class="mob-btn" id="mob-journal" onclick="goPage('journal')"><span class="mi">📝</span>Journal</button>
-    <button class="mob-btn" id="mob-compliance" onclick="goPage('compliance')"><span class="mi">⚖</span>合规</button>
-    <button class="mob-btn" id="mob-risk" onclick="goPage('risk')"><span class="mi">⚠️</span>风控</button>
   </div>
 </div>
 
@@ -541,7 +539,7 @@ tbody tr:hover td{background:rgba(41,98,255,.04);}
       <select id="ft-se"><option value="A+">A+ 最高质量</option><option value="A">A 高质量</option><option value="B" selected>B 标准</option><option value="C">C 低质量</option></select>
     </div>
     <div class="fg"><label>Session</label>
-      <select id="ft-ss"><option value="NY AM">NY AM</option><option value="NY PM">NY PM</option><option value="London">London</option><option value="Asia">Asia</option></select>
+      <select id="ft-ss"><option value="NY AM">NY AM</option><option value="NY Lunch">NY Lunch</option><option value="NY PM">NY PM</option><option value="London">London</option><option value="Asia">Asia</option><option value="Other">Other</option></select>
     </div>
   </div>
   <div class="form-row">
@@ -599,7 +597,7 @@ tbody tr:hover td{background:rgba(41,98,255,.04);}
     <div class="fg"><label>方向</label><select id="fm-dir"><option value="Long">Long</option><option value="Short">Short</option></select></div>
   </div>
   <div class="form-row">
-    <div class="fg"><label>Session</label><select id="fm-session"><option value="NY AM">NY AM</option><option value="NY PM">NY PM</option><option value="London">London</option><option value="Asia">Asia</option></select></div>
+    <div class="fg"><label>Session</label><select id="fm-session"><option value="NY AM">NY AM</option><option value="NY Lunch">NY Lunch</option><option value="NY PM">NY PM</option><option value="London">London</option><option value="Asia">Asia</option><option value="Other">Other</option></select></div>
     <div class="fg"><label>Setup</label><select id="fm-setup"><option value="A+">A+</option><option value="A">A</option><option value="B">B</option></select></div>
   </div>
   <div class="form-row t3">
@@ -769,8 +767,594 @@ onAuthStateChanged(auth, user => {
 
 <script>
 // ════ STATE ════
-const S = { page:'overview', aid:null, accounts:[], trades:[], withdrawals:[], journalDays:[], missedTrades:[], journalDate:null, charts:{}, tradeFilter:'all', compFilter:'all', tradeSearch:'', tradeSession:'all', tradeSetup:'all', tradeQuality:'all', tradeShould:'all', tradeDateFrom:'', tradeDateTo:'' };
+const S = { page:'roadmap', aid:null, accounts:[], trades:[], withdrawals:[], journalDays:[], missedTrades:[], journalDate:null, charts:{}, tradeFilter:'all', compFilter:'all', tradeSearch:'', tradeSession:'all', tradeSetup:'all', tradeQuality:'all', tradeShould:'all', tradeMacro:'all', tradeDateFrom:'', tradeDateTo:'', marketEvents:[], mktEventsLoaded:false, mktEventsLoading:false, mktEventsError:'', mktFilter:{ impacts:['High','Medium','Low','Holiday'], currencies:['USD','EUR','GBP','JPY','CNY','CAD','AUD','NZD','CHF'], types:['Growth','Inflation','Employment','Central Bank','Speeches','Bonds','Housing','Consumer Surveys','Business Surveys','Misc'], search:'', view:'week', filterPanelOpen:false } };
 if(!window.CAL)window.CAL={};
+
+// ══════════════════════════════════════════════════════════
+// ════ TIME ENGINE — NY time · Killzones · ICT Macros ════
+// ══════════════════════════════════════════════════════════
+// All killzone/macro times are in NEW YORK time (America/New_York).
+// Trades come in from the user's local input timezone (default Beijing).
+// We convert → NY time, then classify into a killzone (session) and macro window.
+const TIME_ENGINE = {
+  settings: {
+    inputTZ: 'Asia/Shanghai',      // source TZ of trade timestamps
+    dstMode: 'auto',                // 'auto' | 'manual'
+    londonDST: true,                // only used if dstMode === 'manual'
+    nyDST: true,                    // only used if dstMode === 'manual'
+    killzones: {
+      'Asia':     { start:[20,0],  end:[24,0],  color:'#3b6cf8', enabled:true },
+      'London':   { start:[2,0],   end:[5,0],   color:'#94a3b8', enabled:true },
+      'NY AM':    { start:[9,30],  end:[11,0],  color:'#2bab85', enabled:true },
+      'NY Lunch': { start:[12,0],  end:[13,0],  color:'#e8a020', enabled:true },
+      'NY PM':    { start:[13,30], end:[16,0],  color:'#a855f7', enabled:true }
+    },
+    macros: [
+      { id:'ldn_0233', name:'London 02:33', start:[2,33],  end:[3,0],   kind:'london', enabled:true },
+      { id:'ldn_0403', name:'London 04:03', start:[4,3],   end:[4,30],  kind:'london', enabled:true },
+      { id:'ny_0850',  name:'NY 08:50',     start:[8,50],  end:[9,10],  kind:'ny',     enabled:true },
+      { id:'ny_0950',  name:'NY 09:50',     start:[9,50],  end:[10,10], kind:'ny',     enabled:true },
+      { id:'ny_1050',  name:'NY 10:50',     start:[10,50], end:[11,10], kind:'ny',     enabled:true },
+      { id:'ny_1150',  name:'NY 11:50 Launch', start:[11,50], end:[12,10], kind:'ny', enabled:true },
+      { id:'ny_1310',  name:'NY 13:10',     start:[13,10], end:[13,40], kind:'ny',     enabled:true },
+      { id:'ny_1515',  name:'NY 15:15',     start:[15,15], end:[15,45], kind:'ny',     enabled:true }
+    ]
+  },
+  load(){
+    try{
+      const saved = localStorage.getItem('pg_time_settings');
+      if(saved){
+        const parsed = JSON.parse(saved);
+        // merge carefully so new macros added in updates don't disappear
+        if(parsed.inputTZ) this.settings.inputTZ = parsed.inputTZ;
+        if(parsed.dstMode) this.settings.dstMode = parsed.dstMode;
+        if(typeof parsed.londonDST==='boolean') this.settings.londonDST = parsed.londonDST;
+        if(typeof parsed.nyDST==='boolean') this.settings.nyDST = parsed.nyDST;
+        if(parsed.killzones){
+          Object.keys(parsed.killzones).forEach(k=>{
+            if(this.settings.killzones[k]) Object.assign(this.settings.killzones[k], parsed.killzones[k]);
+          });
+        }
+        if(Array.isArray(parsed.macros)){
+          parsed.macros.forEach(m=>{
+            const idx = this.settings.macros.findIndex(x=>x.id===m.id);
+            if(idx>=0) this.settings.macros[idx] = {...this.settings.macros[idx], ...m};
+          });
+        }
+      }
+    }catch(e){}
+  },
+  save(){
+    try{ localStorage.setItem('pg_time_settings', JSON.stringify(this.settings)); }catch(e){}
+  },
+  // UTC offset (in minutes) for a given timezone at a specific wall-clock moment.
+  // Uses Intl which always respects DST rules for the named zone.
+  _tzOffsetMin(tz, y, mo, d, h, mi){
+    const utcMs = Date.UTC(y, mo-1, d, h, mi);
+    const probe = new Date(utcMs);
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz, year:'numeric', month:'2-digit', day:'2-digit',
+      hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
+    }).formatToParts(probe);
+    const get = t => parseInt(parts.find(p=>p.type===t)?.value||'0',10);
+    const asLocalMs = Date.UTC(get('year'), get('month')-1, get('day'), get('hour')%24, get('minute'), get('second'));
+    return (asLocalMs - utcMs) / 60000;
+  },
+  // Is NY currently in DST (EDT = -4) or standard (EST = -5)?
+  _isDSTInNY(utcMs){
+    const offset = (new Date(utcMs).getTimezoneOffset === undefined) ? 0
+      : -this._tzOffsetMin('America/New_York',
+          new Date(utcMs).getUTCFullYear(),
+          new Date(utcMs).getUTCMonth()+1,
+          new Date(utcMs).getUTCDate(),
+          new Date(utcMs).getUTCHours(),
+          new Date(utcMs).getUTCMinutes());
+    return offset === 240; // 4 hour offset = EDT = DST
+  },
+  // Convert a user-entered date (YYYY-MM-DD) + time (HH:MM) assumed to be in
+  // TIME_ENGINE.settings.inputTZ into the equivalent wall clock in America/New_York.
+  // Returns {year,month,day,hour,minute,totalMinutes,dateStr,timeStr,utcMs} or null.
+  toNY(dateStr, timeStr){
+    if(!dateStr) return null;
+    try{
+      const parts = String(dateStr).split('-');
+      if(parts.length<3) return null;
+      const y=+parts[0], mo=+parts[1], d=+parts[2];
+      let h=0, mi=0;
+      if(timeStr){
+        const tm = String(timeStr).match(/(\d{1,2}):(\d{2})/);
+        if(tm){ h=+tm[1]; mi=+tm[2]; }
+      }
+      const srcTZ = this.settings.inputTZ || 'Asia/Shanghai';
+      const srcOffset = this._tzOffsetMin(srcTZ, y, mo, d, h, mi);
+      const utcMs = Date.UTC(y, mo-1, d, h, mi) - srcOffset*60000;
+      // NY wall clock
+      let nyOffset = this._tzOffsetMin('America/New_York', y, mo, d, h, mi);
+      // Manual DST override: if user says NY DST is off but Intl says it's on, shift -60
+      if(this.settings.dstMode==='manual'){
+        const intlNYOffset = this._tzOffsetMin('America/New_York', y, mo, d, h, mi);
+        const intlSaysDST = Math.abs(intlNYOffset) === 240;
+        if(this.settings.nyDST && !intlSaysDST) nyOffset = -240;
+        else if(!this.settings.nyDST && intlSaysDST) nyOffset = -300;
+      }
+      const nyWallMs = utcMs + nyOffset*60000;
+      const nyDate = new Date(nyWallMs);
+      const Y = nyDate.getUTCFullYear();
+      const M = nyDate.getUTCMonth()+1;
+      const D = nyDate.getUTCDate();
+      const H = nyDate.getUTCHours();
+      const Mi= nyDate.getUTCMinutes();
+      return {
+        year:Y, month:M, day:D, hour:H, minute:Mi,
+        totalMinutes: H*60+Mi,
+        dateStr: `${Y}-${String(M).padStart(2,'0')}-${String(D).padStart(2,'0')}`,
+        timeStr: `${String(H).padStart(2,'0')}:${String(Mi).padStart(2,'0')}`,
+        utcMs
+      };
+    }catch(e){ return null; }
+  },
+  // Convert an ISO timestamp string (e.g. "2026-04-22T09:30:00" or with Z or offset).
+  // If no TZ info is present in the string, treat as inputTZ.
+  fromISO(iso){
+    if(!iso) return null;
+    const trimmed = String(iso).trim();
+    // Has explicit TZ info?
+    if(/Z|[+-]\d{2}:?\d{2}$/.test(trimmed)){
+      try{
+        const d = new Date(trimmed);
+        if(isNaN(d)) return null;
+        const utcMs = d.getTime();
+        // format into NY wall clock
+        const parts = new Intl.DateTimeFormat('en-CA',{
+          timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',
+          hour:'2-digit',minute:'2-digit',hour12:false
+        }).formatToParts(d);
+        const g = t => parts.find(p=>p.type===t)?.value||'0';
+        const Y=+g('year'), M=+g('month'), D=+g('day');
+        const H=(+g('hour'))%24, Mi=+g('minute');
+        return {
+          year:Y,month:M,day:D,hour:H,minute:Mi,
+          totalMinutes: H*60+Mi,
+          dateStr:`${Y}-${String(M).padStart(2,'0')}-${String(D).padStart(2,'0')}`,
+          timeStr:`${String(H).padStart(2,'0')}:${String(Mi).padStart(2,'0')}`,
+          utcMs
+        };
+      }catch(e){ return null; }
+    }
+    // No TZ — parse naive parts
+    const m = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{1,2}):(\d{2})/);
+    if(!m) return null;
+    return this.toNY(`${m[1]}-${m[2]}-${m[3]}`, `${m[4]}:${m[5]}`);
+  },
+  // Classify a NY time object into a killzone (session) name
+  detectKillzone(ny){
+    if(!ny) return 'Other';
+    const mins = ny.totalMinutes;
+    const zones = this.settings.killzones;
+    for(const name of Object.keys(zones)){
+      const z = zones[name];
+      if(z.enabled===false) continue;
+      const sM = z.start[0]*60 + z.start[1];
+      const eM = z.end[0]*60 + z.end[1];
+      if(eM > sM){
+        if(mins >= sM && mins < eM) return name;
+      } else {
+        // wraps midnight (Asia 20:00 → 24:00 doesn't wrap, but allow if someone customises)
+        if(mins >= sM || mins < eM) return name;
+      }
+    }
+    return 'Other';
+  },
+  // Returns macro window name (string) or null
+  detectMacro(ny){
+    if(!ny) return null;
+    const mins = ny.totalMinutes;
+    for(const m of this.settings.macros){
+      if(m.enabled===false) continue;
+      let sM = m.start[0]*60 + m.start[1];
+      let eM = m.end[0]*60 + m.end[1];
+      // DST manual override for London-kind macros
+      if(this.settings.dstMode==='manual' && m.kind==='london'){
+        // London macros are specified in NY time in the indicator; if London DST and NY DST
+        // diverge for a week (rare window in March/November), the London macros shift.
+        // This is subtle and most users should keep dstMode=auto. We intentionally don't
+        // do an extra shift here because we already convert the trade to NY time.
+      }
+      if(mins >= sM && mins < eM) return m.name;
+    }
+    return null;
+  },
+  // Is a given NY time inside ANY killzone? Returns the killzone config or null.
+  killzoneInfo(name){
+    return this.settings.killzones[name] || null;
+  },
+  macroInfo(name){
+    return this.settings.macros.find(m=>m.name===name) || null;
+  },
+  // Classify a trade (stored date/time are assumed to be in settings.inputTZ).
+  classifyTrade(dateStr, timeStr){
+    const ny = this.toNY(dateStr, timeStr);
+    if(!ny) return {session:'Other', macro:null, ny:null};
+    return {
+      session: this.detectKillzone(ny),
+      macro: this.detectMacro(ny),
+      ny
+    };
+  },
+  // Get current NY time info
+  nowNY(){
+    const d = new Date();
+    const parts = new Intl.DateTimeFormat('en-CA',{
+      timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',
+      hour:'2-digit',minute:'2-digit',hour12:false
+    }).formatToParts(d);
+    const g = t => parts.find(p=>p.type===t)?.value||'0';
+    const Y=+g('year'), M=+g('month'), D=+g('day');
+    const H=(+g('hour'))%24, Mi=+g('minute');
+    return {
+      year:Y,month:M,day:D,hour:H,minute:Mi,
+      totalMinutes:H*60+Mi,
+      dateStr:`${Y}-${String(M).padStart(2,'0')}-${String(D).padStart(2,'0')}`,
+      timeStr:`${String(H).padStart(2,'0')}:${String(Mi).padStart(2,'0')}`
+    };
+  },
+  // Is a macro currently active right now in NY time?
+  currentActiveMacro(){
+    const ny = this.nowNY();
+    return this.detectMacro(ny);
+  },
+  // Next upcoming macro today (or tomorrow if none left today)
+  nextMacroToday(){
+    const ny = this.nowNY();
+    const mins = ny.totalMinutes;
+    const enabled = this.settings.macros.filter(m=>m.enabled!==false);
+    const upcoming = enabled.filter(m => (m.start[0]*60+m.start[1]) > mins)
+      .sort((a,b)=>(a.start[0]*60+a.start[1]) - (b.start[0]*60+b.start[1]));
+    if(upcoming.length) return { macro: upcoming[0], today:true };
+    // tomorrow = earliest macro
+    const earliest = [...enabled].sort((a,b)=>(a.start[0]*60+a.start[1]) - (b.start[0]*60+b.start[1]))[0];
+    return earliest ? { macro: earliest, today:false } : null;
+  }
+};
+TIME_ENGINE.load();
+
+// Constants used by many render sections
+const SESSION_LIST = ['Asia','London','NY AM','NY Lunch','NY PM'];
+const MACRO_LIST = TIME_ENGINE.settings.macros.map(m=>m.name);
+function emptySessionMap(){ return {Asia:0,London:0,'NY AM':0,'NY Lunch':0,'NY PM':0,Other:0}; }
+function emptyMacroMap(){ const o={}; MACRO_LIST.forEach(n=>o[n]=0); return o; }
+
+// ══════════════════════════════════════════════════════════
+// ════ MARKET CALENDAR — ForexFactory + Jin10 + manual ════
+// ══════════════════════════════════════════════════════════
+// Browser-friendly approach: try direct fetch first, fall back to CORS proxies.
+// The ForexFactory XML feed (https://nfs.faireconomy.media/ff_calendar_thisweek.xml)
+// is publicly used by MT4 news indicators and exposes week-ahead events.
+// Jin10 has no open browser API; we attempt through a proxy and fall back to
+// manual entry (stored in Firestore collection 'market_events').
+const MKT_CAL = {
+  FF_URLS: [
+    'https://nfs.faireconomy.media/ff_calendar_thisweek.xml',
+    'https://cdn-nfs.faireconomy.media/ff_calendar_thisweek.xml'
+  ],
+  // Optional: next week URL for richer planning ("more news")
+  FF_URLS_NEXT: [
+    'https://nfs.faireconomy.media/ff_calendar_nextweek.xml',
+    'https://cdn-nfs.faireconomy.media/ff_calendar_nextweek.xml'
+  ],
+  PROXIES: [
+    u => 'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
+    u => 'https://corsproxy.io/?'+encodeURIComponent(u)
+  ],
+  // Fetch a URL via several strategies; return text on success.
+  async fetchWithFallback(url, timeoutMs=12000){
+    const tryOnce = async (target) => {
+      const ctrl = new AbortController();
+      const t = setTimeout(()=>ctrl.abort(), timeoutMs);
+      try{
+        const r = await fetch(target, {signal: ctrl.signal, cache:'no-store'});
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        return await r.text();
+      } finally { clearTimeout(t); }
+    };
+    // Direct first
+    try { return await tryOnce(url); } catch(e1) {
+      for(const proxy of this.PROXIES){
+        try { return await tryOnce(proxy(url)); } catch(e2) { /* try next */ }
+      }
+      throw new Error('fetch-failed');
+    }
+  },
+  // Parse ForexFactory XML into a normalised event list.
+  parseFFXML(xmlText){
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xmlText, 'text/xml');
+    const evs = Array.from(doc.getElementsByTagName('event'));
+    return evs.map(ev=>{
+      const get = tag => ev.getElementsByTagName(tag)[0]?.textContent?.trim() || '';
+      const title    = get('title');
+      const country  = get('country');
+      const dateRaw  = get('date');      // m-dd-yyyy  — in FF's server zone (Eastern)
+      const timeRaw  = get('time');      // h:mmam/pm or "All Day"
+      const impact   = get('impact');    // High / Medium / Low / Holiday
+      const forecast = get('forecast');
+      const previous = get('previous');
+      // ── Parse the source date in FF Eastern Time ──
+      const md = dateRaw.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+      if(!md) return null;
+      const srcMonth = +md[1], srcDay = +md[2], srcYear = +md[3];
+      // ── Parse the source time ──
+      let srcHour = 0, srcMin = 0, isAllDay = true;
+      if(/^\d{1,2}:\d{2}/.test(timeRaw)){
+        const tm = timeRaw.match(/^(\d{1,2}):(\d{2})\s*(am|pm)?/i);
+        if(tm){
+          let h = +tm[1]; const m = +tm[2]; const ap = (tm[3]||'').toLowerCase();
+          if(ap==='pm' && h<12) h+=12;
+          if(ap==='am' && h===12) h=0;
+          srcHour = h; srcMin = m; isAllDay = false;
+        }
+      }
+      // ── Convert FF Eastern wall-clock time → absolute UTC ms ──
+      // The FF XML feed is fixed in US/Eastern (with DST). We compute the UTC
+      // instant for that wall-clock by querying the Eastern offset for that moment.
+      // (Reuses TIME_ENGINE._tzOffsetMin which knows DST.)
+      const tzMin = TIME_ENGINE._tzOffsetMin('America/New_York', srcYear, srcMonth, srcDay, srcHour, srcMin);
+      const utcMs = Date.UTC(srcYear, srcMonth-1, srcDay, srcHour, srcMin) - tzMin*60000;
+      // ── Convert UTC → display timezone (user's browser local by default,
+      //    or whatever they pick in MKT_CAL.displayTZ) ──
+      const dispTZ = MKT_CAL.getDisplayTZ();
+      const disp = MKT_CAL._wallClockInTZ(utcMs, dispTZ);
+      const dispDate = `${disp.year}-${String(disp.month).padStart(2,'0')}-${String(disp.day).padStart(2,'0')}`;
+      const dispTime = isAllDay ? '' : `${String(disp.hour).padStart(2,'0')}:${String(disp.minute).padStart(2,'0')}`;
+      // Original Eastern fields — kept for tooltip / debugging
+      const srcDateStr = `${srcYear}-${String(srcMonth).padStart(2,'0')}-${String(srcDay).padStart(2,'0')}`;
+      const srcTimeStr = isAllDay ? '' : `${String(srcHour).padStart(2,'0')}:${String(srcMin).padStart(2,'0')}`;
+      const ev2 = {
+        id: 'ff_'+srcDateStr+'_'+srcTimeStr+'_'+title.slice(0,40).replace(/\W+/g,'_'),
+        source:'forexfactory',
+        title, country, impact: impact||'Low',
+        // Display fields — used everywhere for grouping / showing / sorting
+        date: dispDate,
+        timeNY: dispTime,           // Field name kept for backward compat; semantically = "display time"
+        // Source fields — keep for re-conversion when user changes display TZ
+        srcDate: srcDateStr,
+        srcTime: srcTimeStr,
+        srcTZ: 'America/New_York',
+        utcMs,                      // Absolute timestamp — the source of truth
+        forecast, previous, notes:''
+      };
+      ev2.eventType = MKT_CAL.categorize(ev2);
+      ev2.isSpeech  = MKT_CAL.isSpeech(ev2);
+      return ev2;
+    }).filter(e=>e && e.date);
+  },
+  // Get the user's currently selected display timezone (defaults to browser local).
+  getDisplayTZ(){
+    if(MKT_CAL._displayTZOverride) return MKT_CAL._displayTZOverride;
+    try{
+      const saved = localStorage.getItem('pg_mkt_displayTZ');
+      if(saved) return saved;
+    }catch(e){}
+    try{ return Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/New_York'; }
+    catch(e){ return 'America/New_York'; }
+  },
+  setDisplayTZ(tz){
+    MKT_CAL._displayTZOverride = tz;
+    try{ localStorage.setItem('pg_mkt_displayTZ', tz); }catch(e){}
+    // Re-project all events for the new TZ
+    MKT_CAL.reprojectEvents();
+  },
+  // Compute wall clock {year,month,day,hour,minute} for an absolute UTC ms in given tz.
+  _wallClockInTZ(utcMs, tz){
+    const parts = new Intl.DateTimeFormat('en-CA',{
+      timeZone: tz,
+      year:'numeric',month:'2-digit',day:'2-digit',
+      hour:'2-digit',minute:'2-digit',hour12:false
+    }).formatToParts(new Date(utcMs));
+    const g = t => parts.find(p=>p.type===t)?.value || '0';
+    return { year:+g('year'), month:+g('month'), day:+g('day'),
+             hour:(+g('hour'))%24, minute:+g('minute') };
+  },
+  // Re-project all events' display date/time fields based on current display TZ.
+  // Called when user changes display TZ in settings.
+  reprojectEvents(){
+    if(!Array.isArray(S.marketEvents)) return;
+    const dispTZ = MKT_CAL.getDisplayTZ();
+    S.marketEvents.forEach(ev=>{
+      if(!ev.utcMs){
+        // Manual events without utcMs: synthesise from existing date+timeNY
+        // (assume user typed them as ET when adding manually)
+        if(ev.date){
+          const m = ev.date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+          if(m){
+            const y=+m[1], mo=+m[2], d=+m[3];
+            let h=0, mi=0;
+            const tm = (ev.timeNY||'').match(/^(\d{1,2}):(\d{2})/);
+            if(tm){ h=+tm[1]; mi=+tm[2]; }
+            const off = TIME_ENGINE._tzOffsetMin('America/New_York', y, mo, d, h, mi);
+            ev.utcMs = Date.UTC(y, mo-1, d, h, mi) - off*60000;
+            ev.srcDate = ev.date;
+            ev.srcTime = ev.timeNY||'';
+            ev.srcTZ   = 'America/New_York';
+          }
+        }
+      }
+      if(ev.utcMs){
+        const disp = MKT_CAL._wallClockInTZ(ev.utcMs, dispTZ);
+        ev.date   = `${disp.year}-${String(disp.month).padStart(2,'0')}-${String(disp.day).padStart(2,'0')}`;
+        ev.timeNY = (ev.srcTime || ev.timeNY) ? `${String(disp.hour).padStart(2,'0')}:${String(disp.minute).padStart(2,'0')}` : '';
+      }
+    });
+  },
+  // Auto-classify event into a category based on title keywords.
+  // Used for the "Event Types" filter panel (matches FF / Lucid taxonomy).
+  categorize(ev){
+    const t = (ev.title||'').toLowerCase();
+    if(/cpi|ppi|inflation|pce|core price|trimmed|median cpi/.test(t)) return 'Inflation';
+    if(/non-?farm|nfp|payroll|unemploy|jobless|employ|jolts|adp|wage|earnings|claimant/.test(t)) return 'Employment';
+    if(/gdp|growth|industrial production|manufacturing prod/.test(t)) return 'Growth';
+    if(/rate decision|interest rate|fomc|fed|ecb|boe|boj|snb|rba|rbnz|boc|loan prime|monetary policy|press conf|chairman|chairwoman|chair|governor|president speak|speaks|testif|minutes|statement|symposium|jackson hole/.test(t)) return 'Central Bank';
+    if(/speech|speak|testif|press conf|address|remarks|panel/.test(t)) return 'Speeches';
+    if(/bond|auction|treasury|yield|debt issu/.test(t)) return 'Bonds';
+    if(/housing|home sales|building permits|mortgage|construction|hpi|rightmove/.test(t)) return 'Housing';
+    if(/consumer confidence|consumer sentiment|consumer surveys|michigan|conf board/.test(t)) return 'Consumer Surveys';
+    if(/business confidence|business surveys|pmi|ism|tankan|zew|ifo|nzier/.test(t)) return 'Business Surveys';
+    return 'Misc';
+  },
+  // Detect "Fed speak" / central banker speeches / testimonies — explicitly flagged
+  // even when categorized under Central Bank.
+  isSpeech(ev){
+    const t = (ev.title||'').toLowerCase();
+    return /\b(speak|speaks|speech|testif|press conf|address|remarks|panel|symposium|jackson hole)\b/.test(t);
+  },
+  // Score a single event for trading risk (0-100, higher = riskier)
+  eventRisk(ev){
+    const title = (ev.title||'').toLowerCase();
+    let score = 0;
+    const imp = (ev.impact||'').toLowerCase();
+    if(imp==='high' || imp==='红' || ev.impact==='★★★') score = 75;
+    else if(imp==='medium' || imp==='orange' || ev.impact==='★★') score = 45;
+    else if(imp==='holiday') score = 30;
+    else score = 18;
+    // Extra bumps for well-known market-movers
+    const killers = ['fomc','cpi','non-farm','nonfarm','nfp','pce','gdp','fed chair','fed chairman','powell','interest rate','rate decision','unemployment','payroll','retail sales'];
+    if(killers.some(k=>title.includes(k))) score += 20;
+    // Speeches by Fed Chair / ECB Pres are specifically destabilizing
+    if(MKT_CAL.isSpeech(ev) && /(chair|chairman|chairwoman|powell|lagarde|bailey|ueda|macklem)/.test(title)) score += 12;
+    // USD events hit index futures hardest
+    if((ev.country||'').toUpperCase()==='USD') score += 5;
+    return Math.min(100, score);
+  },
+  // Aggregate all events for a given NY date into a risk summary
+  dayRiskSummary(dateStr, allEvents){
+    const list = allEvents.filter(e=>e.date===dateStr);
+    if(!list.length) return { dateStr, count:0, maxRisk:0, highCount:0, items:[], note:'无重要事件' };
+    const scored = list.map(e=>({...e, risk:this.eventRisk(e)}));
+    scored.sort((a,b)=>b.risk-a.risk);
+    const high = scored.filter(e=>e.risk>=60).length;
+    const med = scored.filter(e=>e.risk>=40 && e.risk<60).length;
+    const speechHigh = scored.filter(e=>MKT_CAL.isSpeech(e) && e.risk>=55).length;
+    let note;
+    if(high>=2) note = '⚠ 多个高影响事件，回避窗口前后交易';
+    else if(high===1) note = '⚠ 1 个高影响事件，严格回避公布前后 10 分钟';
+    else if(speechHigh>=1) note = '🎤 央行讲话日，注意盘中波动';
+    else if(med>=1) note = '中等事件，注意波动';
+    else note = '低影响事件';
+    return {
+      dateStr,
+      count:list.length,
+      maxRisk: scored[0].risk,
+      highCount: high,
+      medCount: med,
+      speechCount: speechHigh,
+      items: scored,
+      note
+    };
+  },
+  // ── Apply user filters ──
+  applyFilters(events){
+    const f = S.mktFilter || {};
+    const impacts = new Set(f.impacts||[]);
+    const currs   = new Set((f.currencies||[]).map(s=>s.toUpperCase()));
+    const types   = new Set(f.types||[]);
+    const search  = (f.search||'').toLowerCase().trim();
+    return events.filter(e=>{
+      if(impacts.size && !impacts.has(e.impact)) return false;
+      const c = (e.country||'').toUpperCase();
+      if(c && currs.size && !currs.has(c)) return false;
+      const t = e.eventType || MKT_CAL.categorize(e);
+      if(types.size && !types.has(t)) return false;
+      if(search && !(e.title||'').toLowerCase().includes(search)) return false;
+      return true;
+    });
+  },
+  // ── Weekly analyzer ──
+  // Looks at ALL events for the current week (Mon-Fri based on the user's display
+  // timezone), produces:
+  //  - red event list, orange event list, speech list
+  //  - daily risk score per day
+  //  - summary verdict + concrete trading recommendations
+  // Sorting is by absolute UTC timestamp so order matches reality regardless of
+  // which timezone events were originally given in.
+  weeklyAnalysis(events){
+    // "Today" in the user's chosen display TZ — this drives week boundaries
+    // so the calendar matches what the user sees on their clock.
+    const dispTZ = MKT_CAL.getDisplayTZ();
+    const nowDisp = MKT_CAL._wallClockInTZ(Date.now(), dispTZ);
+    const todayStr = `${nowDisp.year}-${String(nowDisp.month).padStart(2,'0')}-${String(nowDisp.day).padStart(2,'0')}`;
+    const today = new Date(todayStr+'T12:00:00');
+    const dow = today.getUTCDay() || 7;     // Sunday = 0 → 7
+    const monday = new Date(today);
+    monday.setUTCDate(today.getUTCDate() - (dow-1));
+    const days = [];
+    for(let i=0;i<7;i++){
+      const d = new Date(monday);
+      d.setUTCDate(monday.getUTCDate()+i);
+      days.push(d.toISOString().slice(0,10));
+    }
+    const weekEvents = events.filter(e => days.includes(e.date));
+    // Sort by absolute UTC ms when available; fall back to display date+time
+    const sortByMs = (a,b) => {
+      if(a.utcMs && b.utcMs) return a.utcMs - b.utcMs;
+      return (`${a.date}${a.timeNY||'99'}`).localeCompare(`${b.date}${b.timeNY||'99'}`);
+    };
+    const reds   = weekEvents.filter(e=>(e.impact||'').toLowerCase()==='high').sort(sortByMs);
+    const oranges= weekEvents.filter(e=>(e.impact||'').toLowerCase()==='medium').sort(sortByMs);
+    const speeches = weekEvents.filter(e=>MKT_CAL.isSpeech(e)).sort(sortByMs);
+    const holidays = weekEvents.filter(e=>(e.impact||'').toLowerCase()==='holiday');
+    // Per-day analysis
+    const perDay = days.map(dateStr=>{
+      const summary = MKT_CAL.dayRiskSummary(dateStr, events);
+      const ev = weekEvents.filter(e=>e.date===dateStr);
+      const r = ev.filter(e=>(e.impact||'').toLowerCase()==='high');
+      const o = ev.filter(e=>(e.impact||'').toLowerCase()==='medium');
+      const sp= ev.filter(e=>MKT_CAL.isSpeech(e));
+      // Per-day recommendation
+      let level = 'safe';     // safe / caution / danger
+      let advice = '可按计划执行 — 当天无重要风险事件，建议执行 A+/A 级 setup。';
+      if(r.length>=2){ level='danger'; advice = `🚨 ${r.length} 条红色事件，建议事件前后各 15 分钟内不交易，或当日只用最小手数试探。`; }
+      else if(r.length===1){ level='danger'; advice = `🚨 1 条红色事件 (${r[0].timeNY||'--:--'} ${r[0].title})，公布前后严格回避 10 分钟。`; }
+      else if(sp.some(e=>/(chair|powell|lagarde|bailey|ueda)/i.test(e.title))){ level='caution'; advice = `🎤 重磅央行讲话日 — 减仓观望，等讲话基调确认后再决定方向。`; }
+      else if(o.length>=2){ level='caution'; advice = `⚠ ${o.length} 条橙色事件聚集，建议缩仓 50%，避开公布前 5 分钟。`; }
+      else if(o.length===1){ level='caution'; advice = `⚠ 1 条橙色事件 (${o[0].timeNY||'--:--'} ${o[0].title})，关注其后的盘中波动。`; }
+      else if(holidays.some(h=>h.date===dateStr)){ level='caution'; advice = `🏖 假期日，流动性偏低，避免做大头寸。`; }
+      return { dateStr, summary, reds:r, oranges:o, speeches:sp, level, advice };
+    });
+    // Weekly verdict
+    const totalRed = reds.length, totalOrange = oranges.length, totalSpeech = speeches.length;
+    const dangerDays = perDay.filter(d=>d.level==='danger').length;
+    const cautionDays= perDay.filter(d=>d.level==='caution').length;
+    let weekLevel = 'safe';
+    let headline = '本周风险偏低 — 可按计划执行';
+    let weekAdvice = '本周无明显高风险事件，可正常执行交易计划，按平时风险敞口操作。';
+    if(dangerDays>=3 || totalRed>=4){
+      weekLevel='danger';
+      headline=`🚨 高风险周 — ${totalRed} 条红色事件分布于 ${dangerDays} 天`;
+      weekAdvice = `本周高风险事件密集 (${totalRed} 红 / ${totalOrange} 橙)。建议：① 整周仅做 A+ setup；② 单笔风险减半；③ 事件公布前后 15 分钟内不开仓；④ 周累计亏损达到日亏损上限的 2 倍直接收手。`;
+    } else if(dangerDays>=1 || totalRed>=2){
+      weekLevel='caution';
+      headline=`⚠ 中等风险周 — 注意 ${dangerDays} 个高风险日`;
+      weekAdvice = `本周有 ${totalRed} 条红色事件，重点关注高风险日。建议：① 高风险日只在事件后入场；② 央行讲话前后 30 分钟回避；③ 保持正常单笔风险但减少日内笔数。`;
+    } else if(cautionDays>=2 || totalOrange>=3){
+      weekLevel='caution';
+      headline=`⚠ 中等风险周 — ${totalOrange} 条橙色事件需关注`;
+      weekAdvice = `本周以橙色事件为主，整体波动可控。建议正常执行计划，仅在事件公布前 10 分钟回避。`;
+    }
+    // Top 3 most dangerous events of the week
+    const allScored = weekEvents.map(e=>({...e, risk:MKT_CAL.eventRisk(e)})).sort((a,b)=>b.risk-a.risk);
+    const top3 = allScored.slice(0,3);
+    return {
+      weekDays: days,
+      weekEvents,
+      reds, oranges, speeches, holidays,
+      perDay,
+      weekLevel, headline, weekAdvice,
+      counts: { red:totalRed, orange:totalOrange, speech:totalSpeech, holiday:holidays.length, total:weekEvents.length },
+      top3
+    };
+  }
+};
+
 
 // ════ HELPERS ════
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2); }
@@ -970,20 +1554,24 @@ function calcSetupPanels(trades){
   return {setup:build('setup:'), quality:build('quality:'), session:build('session:')};
 }
 function nyHourFromLocal(dateStr,timeStr){
-  try{
-    const iso = `${dateStr}T${(timeStr||'00:00')}:00`;
-    const d = new Date(iso);
-    const parts = new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'2-digit',hour12:false}).formatToParts(d);
-    return parseInt(parts.find(p=>p.type==='hour')?.value||'0',10);
-  }catch(e){ return 0; }
+  const ny = TIME_ENGINE.toNY(dateStr, timeStr||'00:00');
+  return ny ? ny.hour : 0;
 }
+// Classify a (source-TZ) date+time into a killzone session. Now uses TIME_ENGINE
+// which respects user settings (inputTZ + DST mode + killzone customisation).
 function autoSession(dateStr,timeStr){
-  const h = nyHourFromLocal(dateStr,timeStr);
-  if(h>=19 || h<2) return 'Asia';
-  if(h>=2 && h<8) return 'London';
-  if(h>=8 && h<12) return 'NY AM';
-  if(h>=12 && h<16) return 'NY PM';
-  return 'Other';
+  const ny = TIME_ENGINE.toNY(dateStr, timeStr||'00:00');
+  return TIME_ENGINE.detectKillzone(ny);
+}
+// Detect the ICT macro window (if any) that a trade's entry falls in.
+function autoMacro(dateStr,timeStr){
+  const ny = TIME_ENGINE.toNY(dateStr, timeStr||'00:00');
+  return TIME_ENGINE.detectMacro(ny);
+}
+// Return the NY timestamp for display (e.g. "09:34 NY") for a trade.
+function nyDisplay(dateStr,timeStr){
+  const ny = TIME_ENGINE.toNY(dateStr, timeStr||'00:00');
+  return ny ? `${ny.timeStr} NY` : '';
 }
 
 const COLORS=['#4f6ef7','#4ade80','#fbbf24','#f87171','#a78bfa','#34d399','#fb923c','#60a5fa'];
@@ -1139,7 +1727,7 @@ function calcAllRisk(){
     const lotColor=ddPct<30?'var(--green)':ddPct<70?'var(--amber)':'var(--red)';
     const payout=calcPayout(ac,s.total);
     const canPayout=ac.phase==='Funded'&&s.total>=(ac.payoutTarget||3000);
-    const sessionPnl={Asia:0,London:0,'NY AM':0,'NY PM':0};
+    const sessionPnl={Asia:0,London:0,'NY AM':0,'NY Lunch':0,'NY PM':0};
     s.tr.forEach(t=>{if(sessionPnl[t.session]!==undefined)sessionPnl[t.session]+=t.pnl;});
     const lotViolations=s.tr.filter(t=>lotTier>0&&symToMNQ(t.sym||'',t.c||1)>lotTier).length;
     return{ac,s,r,ddPct,status,lotTier,lotAdv,lotColor,payout,canPayout,sessionPnl,lotViolations,color:COLORS[i%COLORS.length]};
@@ -1321,13 +1909,26 @@ function calcTradeRiskLabel(trade, aid){
 
 function analyzeJournalDay(day, account){
   const dayTrades = S.trades.filter(t=>t.date===day.date && (!account || t.aid===account.id));
+  const macroTrades = dayTrades.filter(t=>t.macroWindow||autoMacro(t.date,t.time||''));
+  const nonMacroTrades = dayTrades.filter(t=>!(t.macroWindow||autoMacro(t.date,t.time||'')));
+  const macroCounts = {};
+  macroTrades.forEach(t=>{
+    const mw = t.macroWindow || autoMacro(t.date,t.time||'');
+    if(mw){ macroCounts[mw] = (macroCounts[mw]||0) + 1; }
+  });
   const stats = {
     tradeCount: dayTrades.length,
     pnl: dayTrades.reduce((s,t)=>s+(t.pnl||0),0),
     violations: dayTrades.filter(t=>t.compliance?.status==='violation').length,
     suspected: dayTrades.filter(t=>t.compliance?.status==='suspected').length,
     highRisk: dayTrades.filter(t=>t.riskLabel==='high').length,
-    followRate: dayTrades.length ? dayTrades.filter(t=>t.followPlan!==false).length/dayTrades.length*100 : 100
+    followRate: dayTrades.length ? dayTrades.filter(t=>t.followPlan!==false).length/dayTrades.length*100 : 100,
+    macroCount: macroTrades.length,
+    nonMacroCount: nonMacroTrades.length,
+    macroPnl: macroTrades.reduce((s,t)=>s+(t.pnl||0),0),
+    nonMacroPnl: nonMacroTrades.reduce((s,t)=>s+(t.pnl||0),0),
+    macroWR: macroTrades.length ? macroTrades.filter(t=>(t.pnl||0)>0).length/macroTrades.length*100 : 0,
+    macroCounts
   };
   let prepScore = 100;
   const notes = [];
@@ -1636,7 +2237,7 @@ function renderAlert(){
 // ════ ROUTING ════
 function goPage(p){
   S.page=p;destroyCharts();
-  ['overview','trades','stats','roadmap','missed','journal','costs','accounts','compliance','import','risk'].forEach(pg=>{
+  ['overview','trades','stats','roadmap','missed','journal','costs','accounts','compliance','import','risk','settings'].forEach(pg=>{
     const n=document.getElementById('nav-'+pg);if(n)n.className='nav-item'+(pg===p?' active':'');
     const m=document.getElementById('mob-'+pg);if(m)m.className='mob-btn'+(pg===p?' active':'');
   });
@@ -1647,7 +2248,7 @@ window.goPage=goPage;
 function selAcct(id){S.aid=id;renderSidebar();renderAlert();updateHeader();renderPage();}
 window.selAcct=selAcct;
 function renderPage(){
-  if(S.page==='overview')renderOverview();
+  if(S.page==='overview')renderRoadmap();
   else if(S.page==='trades')renderTrades();
   else if(S.page==='stats')renderStats();
   else if(S.page==='roadmap')renderRoadmap();
@@ -1658,6 +2259,7 @@ function renderPage(){
   else if(S.page==='compliance')renderCompliance();
   else if(S.page==='import')renderImport();
   else if(S.page==='risk')renderRisk();
+  else if(S.page==='settings')renderSettings();
 }
 
 // ════ OVERVIEW ════
@@ -1796,6 +2398,12 @@ function renderTrades(){
     if(S.tradeSetup!=='all' && (t.setup||'')!==S.tradeSetup) return false;
     if(S.tradeQuality!=='all' && (t.tradeQuality||'')!==S.tradeQuality) return false;
     if(S.tradeShould!=='all' && (t.shouldTrade||'yes')!==S.tradeShould) return false;
+    if(S.tradeMacro && S.tradeMacro!=='all'){
+      const mw = t.macroWindow || autoMacro(t.date,t.time||'');
+      if(S.tradeMacro==='_any'){ if(!mw) return false; }
+      else if(S.tradeMacro==='_none'){ if(mw) return false; }
+      else if(mw !== S.tradeMacro) return false;
+    }
     if(S.tradeDateFrom && (t.date||'')<S.tradeDateFrom) return false;
     if(S.tradeDateTo && (t.date||'')>S.tradeDateTo) return false;
     return true;
@@ -1819,36 +2427,46 @@ function renderTrades(){
   <div class="card-title">高级筛选</div>
   <div class="form-row t3">
     <div class="fg"><label>搜索</label><input value="${esc(S.tradeSearch||'')}" placeholder="品种 / 备注 / 原因" oninput="S.tradeSearch=this.value;renderTrades()"></div>
-    <div class="fg"><label>Session</label><select onchange="S.tradeSession=this.value;renderTrades()"><option value="all" ${S.tradeSession==='all'?'selected':''}>全部</option><option ${S.tradeSession==='NY AM'?'selected':''}>NY AM</option><option ${S.tradeSession==='NY PM'?'selected':''}>NY PM</option><option ${S.tradeSession==='London'?'selected':''}>London</option><option ${S.tradeSession==='Asia'?'selected':''}>Asia</option></select></div>
+    <div class="fg"><label>Session</label><select onchange="S.tradeSession=this.value;renderTrades()"><option value="all" ${S.tradeSession==='all'?'selected':''}>全部</option><option ${S.tradeSession==='NY AM'?'selected':''}>NY AM</option><option ${S.tradeSession==='NY Lunch'?'selected':''}>NY Lunch</option><option ${S.tradeSession==='NY PM'?'selected':''}>NY PM</option><option ${S.tradeSession==='London'?'selected':''}>London</option><option ${S.tradeSession==='Asia'?'selected':''}>Asia</option><option ${S.tradeSession==='Other'?'selected':''}>Other</option></select></div>
     <div class="fg"><label>Setup</label><select onchange="S.tradeSetup=this.value;renderTrades()"><option value="all" ${S.tradeSetup==='all'?'selected':''}>全部</option><option ${S.tradeSetup==='A+'?'selected':''}>A+</option><option ${S.tradeSetup==='A'?'selected':''}>A</option><option ${S.tradeSetup==='B'?'selected':''}>B</option><option ${S.tradeSetup==='C'?'selected':''}>C</option></select></div>
   </div>
   <div class="form-row t3">
     <div class="fg"><label>Trade Quality</label><select onchange="S.tradeQuality=this.value;renderTrades()"><option value="all" ${S.tradeQuality==='all'?'selected':''}>全部</option><option ${S.tradeQuality==='A'?'selected':''}>A</option><option ${S.tradeQuality==='B'?'selected':''}>B</option><option ${S.tradeQuality==='C'?'selected':''}>C</option></select></div>
     <div class="fg"><label>Should Trade</label><select onchange="S.tradeShould=this.value;renderTrades()"><option value="all" ${S.tradeShould==='all'?'selected':''}>全部</option><option value="yes" ${(S.tradeShould||'')==='yes'?'selected':''}>Yes</option><option value="no" ${(S.tradeShould||'')==='no'?'selected':''}>No</option></select></div>
+    <div class="fg"><label>Macro 时段</label><select onchange="S.tradeMacro=this.value;renderTrades()">
+      <option value="all" ${(!S.tradeMacro||S.tradeMacro==='all')?'selected':''}>全部</option>
+      <option value="_any" ${S.tradeMacro==='_any'?'selected':''}>✓ 任意 Macro 内</option>
+      <option value="_none" ${S.tradeMacro==='_none'?'selected':''}>✗ 非 Macro</option>
+      ${TIME_ENGINE.settings.macros.filter(m=>m.enabled!==false).map(m=>`<option value="${esc(m.name)}" ${S.tradeMacro===m.name?'selected':''}>${esc(m.name)}</option>`).join('')}
+    </select></div>
+  </div>
+  <div class="form-row t3">
     <div class="fg"><label>日期范围</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><input type="date" value="${S.tradeDateFrom||''}" onchange="S.tradeDateFrom=this.value;renderTrades()"><input type="date" value="${S.tradeDateTo||''}" onchange="S.tradeDateTo=this.value;renderTrades()"></div></div>
   </div>
 </div>
 ${shown.length===0?`<div class="empty">暂无交易记录</div>`:`
 <div class="tbl-wrap"><table>
-<thead><tr><th>日期/时间</th><th>账户</th><th>品种</th><th>方向</th><th>手数</th><th>Setup</th><th>质量</th><th>Should</th><th>风险</th><th style="text-align:right">盈亏</th><th>合规</th><th>置信度</th><th></th></tr></thead>
+<thead><tr><th>日期/时间 (NY)</th><th>账户</th><th>品种</th><th>方向</th><th>手数</th><th>Session</th><th>Macro</th><th>Setup</th><th>质量</th><th>风险</th><th style="text-align:right">盈亏</th><th>合规</th><th></th></tr></thead>
 <tbody>${shown.map(t=>{
   const acN=S.accounts.find(a=>a.id===t.aid)?.name||'—';
   const cs=t.compliance?.status||'compliant';
-  const conf=t.compliance?.confidence||100;
   const userC=t.compliance?.userConfirmed;
+  const mw = t.macroWindow || autoMacro(t.date,t.time||'');
+  const sess = t.session || autoSession(t.date,t.time||'');
+  const nyT = nyDisplay(t.date,t.time||'');
   return `<tr>
-    <td class="mono" style="font-size:11px;color:var(--muted);">${esc(t.date)}<br>${t.time?`<span style="font-size:10px;">${esc(t.time)}</span>`:''}</td>
+    <td class="mono" style="font-size:11px;color:var(--muted);">${esc(t.date)}<br>${t.time?`<span style="font-size:10px;">${esc(t.time)}</span>`:''}${nyT?`<br><span style="font-size:9px;color:var(--accent);">${esc(nyT)}</span>`:''}</td>
     <td style="font-size:11px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(acN)}</td>
     <td style="font-weight:700;">${esc(t.sym||'—')}</td>
     <td><span class="badge ${t.dir==='Long'?'b-long':'b-short'}">${esc(t.dir||'—')}</span></td>
     <td class="mono">${t.c||1}</td>
+    <td><span style="font-size:11px;color:var(--text);">${esc(sess||'—')}</span></td>
+    <td>${mw?`<span class="badge b-blue" style="font-size:9px;">${esc(mw)}</span>`:`<span style="color:var(--muted2);font-size:10px;">—</span>`}</td>
     <td><span class="badge ${t.setup==='A+'?'b-good':t.setup==='A'?'b-blue':t.setup==='B'?'b-mid':'b-bad'}">${esc(t.setup||'B')}</span></td>
     <td><span class="badge ${t.tradeQuality==='A'?'b-good':t.tradeQuality==='B'?'b-mid':'b-bad'}">${esc(t.tradeQuality||'—')}</span></td>
-    <td><span class="badge ${(t.shouldTrade||'yes')==='yes'?'b-good':'b-bad'}">${(t.shouldTrade||'yes')==='yes'?'Yes':'No'}</span></td>
-    <td><span class="badge ${t.riskLabel==='high'?'b-bad':t.riskLabel==='watch'?'b-mid':'b-good'}">${t.riskLabel==='high'?'高风险':t.riskLabel==='watch'?'观察':'常规'}</span></td>
+    <td><span class="badge ${t.riskLabel==='high'?'b-bad':t.riskLabel==='watch'?'b-mid':'b-good'}">${t.riskLabel==='high'?'高':t.riskLabel==='watch'?'观':'常'}</span></td>
     <td class="mono" style="font-weight:700;color:${pnlC(t.pnl||0)};text-align:right;">${$m(t.pnl||0)}</td>
     <td><span class="badge b-${cs}">${cs==='violation'?'违规':cs==='suspected'?'疑似':'合规'}</span>${userC&&cs!=='compliant'?'<span style="font-size:9px;color:var(--green);margin-left:3px;">✓</span>':''}</td>
-    <td><span style="font-size:11px;font-family:monospace;color:${cs==='violation'?'var(--red)':cs==='suspected'?'var(--amber)':'var(--muted2);'};">${conf}%</span><div class="conf-bar" style="display:block;margin-top:2px;"><div class="conf-bar-fill" style="width:${conf}%;background:${cs==='violation'?'var(--red)':cs==='suspected'?'var(--amber)':'var(--green)'};"></div></div></td>
     <td style="display:flex;gap:2px;">
       <button class="del-btn" onclick="showTradeDetail('${t.id}')" title="详情">👁</button>
       <button class="del-btn" onclick="delTrade('${t.id}')">×</button>
@@ -2104,6 +2722,19 @@ function renderStats(){
 
 <div class="card" style="margin-top:10px;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+    <div class="card-title" style="margin:0;">🎯 PERFORMANCE BY ICT MACRO</div>
+    <div style="font-size:10px;color:var(--muted);">Macro 时段样本对比</div>
+  </div>
+  <div style="overflow-x:auto;"><table style="width:100%;min-width:640px;">
+    <thead><tr>
+      <th>Macro</th><th style="text-align:center;">笔数</th><th style="text-align:center;">胜率</th><th style="text-align:center;">期望值</th><th style="text-align:center;">Avg P/L</th><th style="text-align:right;">Profit</th>
+    </tr></thead>
+    <tbody id="macro-perf-table"></tbody>
+  </table></div>
+  <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);" id="macro-summary"></div>
+</div>
+<div class="card" style="margin-top:10px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
     <div class="card-title" style="margin:0;">PERFORMANCE BY MONTH</div>
     <div style="display:flex;gap:6px;align-items:center;">
       <button onclick="window.calNavYear(-1)" style="padding:2px 10px;">‹</button>
@@ -2155,7 +2786,7 @@ function renderStats(){
     }
 
     // ── Session P&L bars ──
-    const sessionPnl={Asia:0,London:0,'NY AM':0,'NY PM':0};
+    const sessionPnl={Asia:0,London:0,'NY AM':0,'NY Lunch':0,'NY PM':0};
     s.tr.forEach(t=>{if(sessionPnl[t.session]!==undefined)sessionPnl[t.session]+=t.pnl;});
     const worstSess=Object.keys(sessionPnl).sort((a,b)=>sessionPnl[a]-sessionPnl[b])[0];
     const mxSess=Math.max(...Object.values(sessionPnl).map(Math.abs))||1;
@@ -2257,7 +2888,18 @@ function renderStats(){
     const edgeWrap=document.getElementById('edge-panel-grid');
     if(edgeWrap){
       const panel=(title,rows)=>`<div class=\"card\" style=\"margin-bottom:0;background:var(--surface2);\"><div class=\"card-title\">${title}</div>${rows.length?rows.slice(0,5).map(r=>`<div class=\"srow\"><span>${r.label}</span><span class=\"mono\" style=\"color:${pnlC(r.exp)}\">${$m(r.exp)} <span style=\"font-size:10px;color:var(--muted);\">/ ${r.count}</span></span></div>`).join(''):`<div class=\"empty\" style=\"padding:1rem 0;\">暂无数据</div>`}</div>`;
-      edgeWrap.innerHTML=panel('By Setup',edge.setup)+panel('By Trade Quality',edge.quality)+panel('By Session',edge.session);
+      // Macro panel
+      const mb = macroBreakdown(s.tr);
+      const macroRows = mb.perMacro.filter(m=>m.count>0).sort((a,b)=>b.expectancy-a.expectancy);
+      const macroPanel = `<div class="card" style="margin-bottom:0;background:var(--surface2);border-left:2px solid var(--amber);">
+        <div class="card-title">🎯 By ICT Macro</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Macro 内 vs 非 Macro (样本 ${mb.summary.inCount} / ${mb.summary.outCount})</div>
+        <div class="srow"><span>Macro 内</span><span class="mono" style="color:${pnlC(mb.summary.inExp)}">${$m(mb.summary.inExp)} <span style="font-size:10px;color:var(--muted);">WR ${mb.summary.inWR.toFixed(0)}%</span></span></div>
+        <div class="srow"><span>非 Macro</span><span class="mono" style="color:${pnlC(mb.summary.outExp)}">${$m(mb.summary.outExp)} <span style="font-size:10px;color:var(--muted);">WR ${mb.summary.outWR.toFixed(0)}%</span></span></div>
+        <div style="border-top:1px dashed var(--border);margin:6px 0;"></div>
+        ${macroRows.length ? macroRows.slice(0,6).map(r=>`<div class="srow"><span style="font-size:11px;">${esc(r.name)}</span><span class="mono" style="color:${pnlC(r.expectancy)}">${$m(r.expectancy)} <span style="font-size:10px;color:var(--muted);">/${r.count}</span></span></div>`).join('') : `<div class="empty" style="padding:.6rem 0;font-size:11px;">暂无 Macro 样本</div>`}
+      </div>`;
+      edgeWrap.innerHTML=panel('By Setup',edge.setup)+panel('By Trade Quality',edge.quality)+panel('By Session',edge.session)+macroPanel;
     }
 
     // ── Consecutive streaks ──
@@ -2270,7 +2912,7 @@ function renderStats(){
     if(mcwEl)mcwEl.textContent=maxCW;if(acwEl)acwEl.textContent=cntCW>0?(totCW/cntCW).toFixed(1):'0';if(aclEl)aclEl.textContent=cntCL>0?(totCL/cntCL).toFixed(1):'0';
 
     // ── Session Performance Table ──
-    const sessions=['Asia','London','NY AM','NY PM'];
+    const sessions=SESSION_LIST;
     const spEl=document.getElementById('session-perf-table');
     if(spEl){spEl.innerHTML=sessions.map(sess=>{
       const st=s.tr.filter(t=>t.session===sess);
@@ -2284,6 +2926,69 @@ function renderStats(){
         <td style="text-align:right;font-family:'IBM Plex Mono',monospace;color:${pnlC(sp2)};font-weight:700;">${$m(sp2)}</td>
       </tr>`;
     }).join('');}
+
+    // ── Macro Performance Table ──
+    const mpEl = document.getElementById('macro-perf-table');
+    const mpSum = document.getElementById('macro-summary');
+    if(mpEl){
+      const macroNames = TIME_ENGINE.settings.macros.map(m=>m.name);
+      const rows = [];
+      // Each macro
+      macroNames.forEach(mname=>{
+        const mt = s.tr.filter(t=>(t.macroWindow||autoMacro(t.date,t.time||''))===mname);
+        rows.push({name:mname, trades:mt});
+      });
+      // Aggregate rows
+      const inAnyMacro = s.tr.filter(t=>{
+        const mw = t.macroWindow || autoMacro(t.date,t.time||'');
+        return !!mw;
+      });
+      const outsideMacro = s.tr.filter(t=>{
+        const mw = t.macroWindow || autoMacro(t.date,t.time||'');
+        return !mw;
+      });
+
+      const rowHTML = (label, st, kind='macro')=>{
+        if(!st.length) return `<tr><td style="color:var(--muted);font-weight:600;">${esc(label)}</td><td colspan="5" style="text-align:center;color:var(--muted2);font-size:11px;">暂无样本</td></tr>`;
+        const sw = st.filter(t=>(t.pnl||0)>0).length;
+        const sp2 = st.reduce((a,t)=>a+(t.pnl||0),0);
+        const wr2 = sw/st.length*100;
+        const avgPL = sp2/st.length;
+        const exp = expectancyForTrades(st);
+        const bg = kind==='agg' ? 'rgba(59,108,248,.08)' : (sp2>0?'rgba(43,171,133,.04)':'rgba(232,85,85,.04)');
+        const nameStyle = kind==='agg' ? 'font-weight:700;color:var(--accent);' : 'font-weight:600;';
+        return `<tr style="background:${bg}">
+          <td style="${nameStyle}">${esc(label)}</td>
+          <td style="text-align:center;">${st.length}</td>
+          <td style="text-align:center;font-weight:700;color:${wr2>=50?'var(--green)':'var(--red)'};">${wr2.toFixed(0)}%</td>
+          <td style="text-align:center;font-family:'IBM Plex Mono',monospace;color:${pnlC(exp)};font-weight:600;">${$m(exp)}</td>
+          <td style="text-align:center;font-family:'IBM Plex Mono',monospace;color:${pnlC(avgPL)};">${$m(avgPL)}</td>
+          <td style="text-align:right;font-family:'IBM Plex Mono',monospace;color:${pnlC(sp2)};font-weight:700;">${$m(sp2)}</td>
+        </tr>`;
+      };
+      mpEl.innerHTML =
+        rowHTML('✓ 任意 Macro 内', inAnyMacro, 'agg')
+        + rowHTML('✗ 非 Macro 外', outsideMacro, 'agg')
+        + rows.map(r=>rowHTML(r.name, r.trades)).join('');
+
+      if(mpSum){
+        if(!inAnyMacro.length){
+          mpSum.innerHTML = '尚未记录 Macro 时段样本，系统会在下次 CSV 导入后自动分类。';
+        }else{
+          const inExp  = expectancyForTrades(inAnyMacro);
+          const outExp = expectancyForTrades(outsideMacro);
+          const diff = inExp - outExp;
+          const verdict = !outsideMacro.length
+            ? `全部样本都落在 Macro 时段内。`
+            : (Math.abs(diff)<1)
+              ? `Macro 内外表现接近（期望值差 ${$m(diff)}）。`
+              : diff>0
+                ? `📈 Macro 时段表现更好，期望值高出 <strong style="color:var(--green)">${$m(diff)}</strong>/笔。`
+                : `⚠ Macro 时段期望值反而低 <strong style="color:var(--red)">${$m(-diff)}</strong>/笔，可能你在 Macro 内有冲动/抢跑行为。`;
+          mpSum.innerHTML = `样本：Macro 内 <strong style="color:var(--text)">${inAnyMacro.length}</strong> 笔 · Macro 外 <strong style="color:var(--text)">${outsideMacro.length}</strong> 笔。${verdict}`;
+        }
+      }
+    }
 
     // ── Month Grid + Year Calendar ──
     if(!window._statsYear)window._statsYear=new Date().getFullYear();
@@ -2498,7 +3203,7 @@ function renderRoadmap(){
       reason: (t.compliance?.violations?.[0]) || (t.compliance?.suspected?.[0]?.reason) || (t.riskReasons?.[0]) || '—'
     };
   });
-  const sessionBreak = ['Asia','London','NY AM','NY PM'].map(sess=>{
+  const sessionBreak = SESSION_LIST.map(sess=>{
     const arr = todayTrades.filter(t=>(t.session||'')===sess);
     const pnl = arr.reduce((sum,t)=>sum+(t.pnl||0),0);
     return {sess, count: arr.length, pnl};
@@ -2511,8 +3216,96 @@ function renderRoadmap(){
         ? '账户正处于恢复观察期，只允许保守恢复样本。'
         : '账户已冻结，优先停止交易并完成复盘。';
   const behaviorChip = (label,val,warn1=1,warn2=2)=>`<span class="metric-chip" style="border-color:${val>=warn2?'rgba(232,85,85,.3)':val>=warn1?'rgba(232,160,32,.25)':'var(--border)'};color:${val>=warn2?'var(--red)':val>=warn1?'var(--amber)':'var(--text)'}">${label}: ${val}</span>`;
+  const pending = CE.pendingCount();
+  const totalTodayPnl = S.trades.filter(t=>t.date===today).reduce((sum,t)=>sum+(t.pnl||0),0);
+  const prot = RPE.check(S.accounts,S.trades);
+  const allHealth = S.accounts.map(a=>{
+    const s2 = calcS(a.id);
+    const h = s2 ? calcHealthScore(a,s2) : {score:0,label:'无数据',color:'var(--muted)'};
+    const r2 = a.rules || {};
+    const dd2 = r2.maxDD>0 ? ((s2?.ddU||0)/r2.maxDD*100) : 0;
+    const rm = ROLE_META[a.role||'primary'] || ROLE_META.primary;
+    return `<div style="background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01));border:1px solid ${h.score>=80?'rgba(43,171,133,.35)':h.score>=60?'rgba(232,160,32,.28)':'rgba(74,158,240,.22)'};border-radius:12px;padding:12px;">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:8px;">
+        <div style="min-width:0;">
+          <div style="font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(a.name)}</div>
+          <div style="font-size:10px;color:${h.color};margin-top:2px;">${h.label}</div>
+        </div>
+        <span class="role-tag ${rm.cls}">${rm.label}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:end;gap:10px;">
+        <div style="font-size:30px;font-weight:800;line-height:1;color:${h.color};font-family:monospace;">${h.score}</div>
+        <div style="font-size:11px;color:var(--muted);text-align:right;">回撤 ${dd2.toFixed(0)}%</div>
+      </div>
+      <div style="height:5px;border-radius:999px;background:rgba(255,255,255,.05);overflow:hidden;margin-top:10px;">
+        <div style="height:100%;width:${Math.min(100,dd2)}%;background:${dd2>=85?'var(--red)':dd2>=65?'var(--amber)':'var(--green)'};"></div>
+      </div>
+    </div>`;
+  }).join('');
+  const phBadge = {'Evaluation':'<span class="badge b-eval">Evaluation</span>','Funded':'<span class="badge b-funded">Funded</span>','Personal Account':'<span class="badge b-pa">PA</span>','Failed':'<span class="badge b-bad">Failed ✗</span>'}[ac.phase]||'';
+  const pT = (ac.rules?.target||0)>0 ? Math.max(0,Math.min(100,(s.total||0)/(ac.rules.target||1)*100)) : 0;
+  const pD = (ac.rules?.maxDD||0)>0 ? Math.max(0,Math.min(100,(s.ddU||0)/(ac.rules.maxDD||1)*100)) : 0;
+  const pDL = (ac.rules?.daily||0)>0 ? Math.max(0,Math.min(100,Math.abs(Math.min(0,s.todayPnl||0))/(ac.rules.daily||1)*100)) : 0;
+  const protBlock = prot.isActive ? `<div class="alarm-box ${prot.isCritical?'critical':'warning'}" style="margin-bottom:12px;">
+      <span class="alarm-icon">${prot.isCritical?'🚨':'⚠️'}</span>
+      <div class="alarm-title">${prot.message}</div>
+      <div class="alarm-sub">${prot.triggers.map(t=>`• ${t}`).join('<br>')}</div>
+      <span class="stop-badge">${prot.isCritical?'立即停止交易':'仅限低风险操作'}</span>
+    </div>
+    <div class="prot-restrictions" style="margin-bottom:12px;">
+      <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:8px;letter-spacing:.04em;text-transform:uppercase;">当前限制措施</div>
+      <div class="prot-item">激进账户已强制禁用</div>
+      <div class="prot-item">备用账户禁止承接正式风险</div>
+      <div class="prot-item">仅保守账户可继续低风险交易</div>
+      <div class="prot-item">单笔允许风险降低 50%，日最大笔数减半</div>
+    </div>` : '';
+  const tradingOverviewStrip = `
+    <div class="card" style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+        <div>
+          <div class="card-title" style="margin-bottom:6px;">Overview Integrated Into Trading OS</div>
+          <div class="small-note">保留总览入口，同时把全账户健康、待审核和总控信息压进 Trading OS 顶部，避免来回切页。</div>
+        </div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;">
+          <span style="color:var(--muted);">今日合计: <strong class="mono" style="color:${pnlC(totalTodayPnl)}">${$m(totalTodayPnl)}</strong></span>
+          <span style="color:var(--muted);">待审核: <strong style="color:${pending>0?'var(--amber)':'var(--green)'};">${pending}</strong></span>
+          <span style="color:var(--muted);">账户数: <strong>${S.accounts.length}</strong></span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;">
+        ${allHealth}
+      </div>
+    </div>`;
+  const mergedAccountOverview = `
+    <div class="card" style="margin-bottom:12px;">
+      <div class="section-hd" style="margin-bottom:10px;">
+        <div>
+          <div class="card-title" style="margin:0;">Account Core Panel</div>
+          <div class="small-note" style="margin-top:6px;">原总览的账户指标、目标进度和权益曲线已并入 Trading OS。</div>
+        </div>
+        <div>
+          <span class="badge ${stateBadge}">${esc(ac.name)} ${phBadge}</span>
+        </div>
+      </div>
+      <div class="page-sub" style="margin-bottom:12px;">${esc(ac.broker||'')}${ac.broker?' · ':''}账户规模 ${$m(ac.start||0)}</div>
+      <div class="g4">
+        <div class="mc"><div class="lbl">当前余额</div><div class="val">${$m(s.bal)}</div><div class="s">起始 ${$m(ac.start||0)}</div></div>
+        <div class="mc"><div class="lbl">交易盈亏</div><div class="val" style="color:${pnlC(s.total)}">${$m(s.total)}</div><div class="s">未扣费用</div></div>
+        <div class="mc"><div class="lbl">总投入费用</div><div class="val amb">${$m(s.feeTotal)}</div><div class="s">报名+激活+其他</div></div>
+        <div class="mc"><div class="lbl">扣费后净值</div><div class="val" style="color:${pnlC(s.netAfterFees)}">${$m(s.netAfterFees)}</div><div class="s">真实现金视角</div></div>
+        <div class="mc"><div class="lbl">已用回撤</div><div class="val" style="color:${riskC(pD)}">${$m(s.ddU)}</div><div class="s">限制 ${$m(ac.rules?.maxDD||0)}</div></div>
+        <div class="mc"><div class="lbl">交易天数</div><div class="val">${s.days}</div><div class="s">${(ac.rules?.minDays||0)>0?'最少 '+ac.rules.minDays+' 天':'无要求'}</div></div>
+        <div class="mc"><div class="lbl">纪律评分</div><div class="val" style="color:${s.execScore>=85?'var(--green)':s.execScore>=70?'var(--amber)':'var(--red)'}">${s.execScore.toFixed(0)}</div><div class="s">100分制</div></div>
+        <div class="mc"><div class="lbl">今日 P&L</div><div class="val" style="color:${pnlC(s.todayPnl)}">${$m(s.todayPnl)}</div><div class="s">${(ac.rules?.daily||0)>0?'日限 '+$m(ac.rules.daily):'无限制'}</div></div>
+      </div>
+      ${(ac.rules?.target||0)>0?`<div class="card" style="margin-top:12px;"><div class="card-title">盈利目标 ${$p(pT)}</div><div class="pbar-lg"><div class="pbar-lg-f" style="width:${pT}%;background:var(--green);"></div></div><div style="font-size:11px;color:var(--muted2);margin-top:5px;">${$m(Math.max(0,s.total))} / ${$m(ac.rules.target)} · 还需 ${$m(Math.max(0,ac.rules.target-s.total))}</div></div>`:''}
+      ${(ac.rules?.maxDD||0)>0?`<div class="card" style="margin-top:12px;"><div class="card-title">EOD 追踪止损 · ${s.isLocked?'<span style="color:var(--green)">已锁定纯利润模式</span>':$p(pD)+' 已用'}</div><div class="pbar-lg"><div class="pbar-lg-f" style="width:${Math.min(100,pD)}%;background:${riskC(pD)};"></div></div><div style="font-size:12px;color:var(--muted2);margin-top:7px;display:flex;gap:16px;flex-wrap:wrap;">${s.isLocked?`<span style="color:var(--green)">纯利润: ${$m(s.pureProfit)}</span><span>止损线已锁定在 ${$m(ac.start||0)}</span>`:`<span>止损线: ${$m(s.eodFloor)}</span><span>当前余额: ${$m(s.bal)}</span><span style="color:${riskC(pD)}">剩余空间: ${$m(s.bal-s.eodFloor)}</span>`}</div></div>`:''}
+      ${(ac.rules?.daily||0)>0?`<div class="card" style="margin-top:12px;"><div class="card-title">今日亏损限制 · ${$p(pDL)}</div><div class="pbar"><div class="pbar-f" style="width:${pDL}%;background:${riskC(pDL)};"></div></div><div style="font-size:11px;color:var(--muted2);margin-top:5px;">今日 P&L ${$m(s.todayPnl)} · 限制 ${$m(ac.rules.daily)}</div></div>`:''}
+      <div class="card" style="margin-top:12px;margin-bottom:0;"><div class="card-title">权益曲线</div><div style="position:relative;height:220px;"><canvas id="roadmap-ec-c"></canvas></div></div>
+    </div>`;
 
   document.getElementById('page-content').innerHTML = `
+  ${protBlock}
   <div class="section-hd">
     <div>
       <div class="page-title">Trading OS</div>
@@ -2526,6 +3319,9 @@ function renderRoadmap(){
       <button class="btn-primary btn-sm" onclick="openDrawer('trade')">+ 添加交易</button>
     </div>
   </div>
+
+  ${tradingOverviewStrip}
+  ${mergedAccountOverview}
 
   <div class="card" style="margin-bottom:12px;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
@@ -2673,8 +3469,463 @@ function renderRoadmap(){
         <div class="v">账户状态 <strong style="color:${state.color};">${state.label}</strong>；下一笔状态 <strong style="color:${engine.status==='allow'?'var(--green)':engine.status==='caution'?'var(--amber)':'var(--red)'};">${engine.status==='allow'?'Allow':engine.status==='caution'?'Caution':'Block'}</strong>；明日执行合同 <strong style="color:${tomorrowPlan.canTrade?'var(--green)':'var(--red)'};">${tomorrowPlan.headline}</strong>。</div>
       </div>
     </div>
+  </div>
+
+  ${renderTradingOSMacroCard(todayTrades)}
+  ${renderTradingOSMarketCard()}
+  `;
+
+  // Trigger market events fetch if not yet loaded
+  if(!S.mktEventsLoaded && !S.mktEventsLoading){
+    MKT_refresh().catch(()=>{});
+  }
+  if(s.ec.length>1&&window.Chart){
+    setTimeout(()=>{
+      const ctx=document.getElementById('roadmap-ec-c');
+      if(ctx){
+        const lc=s.total>=0?'#4ade80':'#f87171';
+        S.charts['roadmap-ec-c']=new window.Chart(ctx,{type:'line',data:{labels:s.ed,datasets:[{data:s.ec,borderColor:lc,backgroundColor:lc+'18',fill:true,tension:0.35,pointRadius:2,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#475569',font:{size:10},maxRotation:45,autoSkip:true,maxTicksLimit:10}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#475569',font:{size:10},callback:v=>'$'+v.toLocaleString()}}}}});
+      }
+    },50);
+  }
+}
+
+// ── Macro activity card for Trading OS ──
+function renderTradingOSMacroCard(todayTrades){
+  const nowNY = TIME_ENGINE.nowNY();
+  const today = nowNY.dateStr;
+  const active = TIME_ENGINE.currentActiveMacro();
+  const next = TIME_ENGINE.nextMacroToday();
+  // Macro stats across today
+  const macroMap = {};
+  TIME_ENGINE.settings.macros.forEach(m=>{ macroMap[m.name] = {count:0,pnl:0,trades:[]}; });
+  todayTrades.forEach(t=>{
+    const mw = t.macroWindow || autoMacro(t.date,t.time||'');
+    if(mw && macroMap[mw]){ macroMap[mw].count++; macroMap[mw].pnl += (t.pnl||0); macroMap[mw].trades.push(t); }
+  });
+  const hit = Object.keys(macroMap).filter(k=>macroMap[k].count>0);
+  const fmtHM = hm => `${String(hm[0]).padStart(2,'0')}:${String(hm[1]).padStart(2,'0')}`;
+  // Timeline ordered by start time
+  const ordered = [...TIME_ENGINE.settings.macros].filter(m=>m.enabled!==false)
+    .sort((a,b)=>(a.start[0]*60+a.start[1])-(b.start[0]*60+b.start[1]));
+  const rows = ordered.map(m=>{
+    const data = macroMap[m.name] || {count:0,pnl:0};
+    const startM = m.start[0]*60+m.start[1];
+    const endM = m.end[0]*60+m.end[1];
+    const isActive = nowNY.totalMinutes >= startM && nowNY.totalMinutes < endM;
+    const isPast = nowNY.totalMinutes >= endM;
+    const icon = isActive ? '🟢' : isPast ? '✓' : '○';
+    const status = isActive?'ACTIVE':isPast?'Past':'Upcoming';
+    const rowColor = isActive ? 'rgba(43,171,133,.08)' : '';
+    return `<tr style="background:${rowColor};">
+      <td style="padding:5px 8px;font-size:14px;">${icon}</td>
+      <td style="padding:5px 8px;font-weight:600;font-size:12px;">${esc(m.name)}</td>
+      <td style="padding:5px 8px;" class="mono">${fmtHM(m.start)}–${fmtHM(m.end)}</td>
+      <td style="padding:5px 8px;font-size:10px;color:var(--muted);">${status}</td>
+      <td style="padding:5px 8px;text-align:center;">${data.count || '—'}</td>
+      <td style="padding:5px 8px;text-align:right;" class="mono" ${data.count?`style="color:${pnlC(data.pnl)};font-weight:700;"`:'style="color:var(--muted2);"'}>${data.count?$m(data.pnl):'—'}</td>
+    </tr>`;
+  }).join('');
+
+  return `<div class="card">
+    <div class="card-title">🎯 8. Today's ICT Macro Activity</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+      <div class="mc" style="flex:1;min-width:160px;">
+        <div class="lbl">当前时段</div>
+        <div class="val" style="color:${active?'var(--green)':'var(--muted)'};">${active || (next?`下一个: ${next.macro.name}`:'—')}</div>
+        <div class="s">NY ${esc(nowNY.timeStr)} · ${hit.length} 个 Macro 已参与</div>
+      </div>
+      <div class="mc" style="flex:1;min-width:160px;">
+        <div class="lbl">Macro 内交易</div>
+        <div class="val" style="color:${hit.length?'var(--accent)':'var(--muted)'};">${hit.reduce((s,k)=>s+macroMap[k].count,0)} 笔</div>
+        <div class="s">${hit.join(' · ')||'今日未在 Macro 内交易'}</div>
+      </div>
+      <div class="mc" style="flex:1;min-width:160px;">
+        <div class="lbl">Macro 内净值</div>
+        <div class="val" style="color:${pnlC(hit.reduce((s,k)=>s+macroMap[k].pnl,0))};">${$m(hit.reduce((s,k)=>s+macroMap[k].pnl,0))}</div>
+        <div class="s">所有 Macro 时段合计</div>
+      </div>
+    </div>
+    <div style="overflow-x:auto;"><table style="width:100%;font-size:12px;">
+      <thead><tr style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;">
+        <th style="text-align:left;padding:5px 8px;"></th>
+        <th style="text-align:left;padding:5px 8px;">Macro</th>
+        <th style="text-align:left;padding:5px 8px;">时间 (NY)</th>
+        <th style="text-align:left;padding:5px 8px;">状态</th>
+        <th style="text-align:center;padding:5px 8px;">笔数</th>
+        <th style="text-align:right;padding:5px 8px;">P&L</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+    <div class="small-note" style="margin-top:8px;">提示：不在 Macro 窗口内的交易通常噪音更大。重点观察 Macro 窗口内的胜率与期望值，参见"统计分析 → Performance by ICT Macro"。</div>
   </div>`;
 }
+
+// ── Market Calendar card for Trading OS (rebuilt) ──
+// Layout:
+//   1. Toolbar       - Filter button (popup like image 2), View tabs, Refresh, +Manual
+//   2. Weekly banner - color-coded headline + concrete weekly trading advice
+//   3. 5-day strip   - clickable per-day risk cards, the weekly verdict drilled down
+//   4. Detail panel  - shows either "Weekly top events" or a single day's full events
+//                      styled like the ForexFactory calendar table (image 1)
+function renderTradingOSMarketCard(){
+  // "Today" in the user's chosen display timezone (defaults to browser local).
+  // This is what drives "TODAY" label, week boundary alignment, and default selection.
+  const dispTZ = MKT_CAL.getDisplayTZ();
+  const nowDisp = MKT_CAL._wallClockInTZ(Date.now(), dispTZ);
+  const today = `${nowDisp.year}-${String(nowDisp.month).padStart(2,'0')}-${String(nowDisp.day).padStart(2,'0')}`;
+  // Apply user filters before doing anything else
+  const filtered = MKT_CAL.applyFilters(S.marketEvents);
+  const weekly   = MKT_CAL.weeklyAnalysis(filtered);
+  const todaySummary = MKT_CAL.dayRiskSummary(today, filtered);
+  const loading = S.mktEventsLoading;
+  const errLine = S.mktEventsError ? `<div style="font-size:11px;color:var(--red);margin-bottom:8px;">⚠ ${esc(S.mktEventsError)}。点击"刷新"重试或"手动添加"录入关键事件。</div>` : '';
+  const sourceFF = S.marketEvents.filter(e=>e.source==='forexfactory').length;
+  const sourceManual = S.marketEvents.filter(e=>e.source==='manual'||e.source==='jin10').length;
+  const filteredOut = S.marketEvents.length - filtered.length;
+  // Selected day for detail panel
+  if(!S.mktSelectedDate || !weekly.weekDays.includes(S.mktSelectedDate)) S.mktSelectedDate = today;
+  const detailDate = S.mktSelectedDate;
+  const detailItems = filtered
+    .filter(e=>e.date===detailDate)
+    .sort((a,b)=> (a.utcMs && b.utcMs) ? (a.utcMs - b.utcMs)
+                : (a.timeNY||'99:99').localeCompare(b.timeNY||'99:99'));
+
+  // ── Weekly banner ──
+  const weekColor = weekly.weekLevel==='danger' ? 'var(--red)'
+                  : weekly.weekLevel==='caution' ? 'var(--amber)'
+                  : 'var(--green)';
+  const weekBg = weekly.weekLevel==='danger' ? 'rgba(232,85,85,.07)'
+               : weekly.weekLevel==='caution' ? 'rgba(232,160,32,.06)'
+               : 'rgba(43,171,133,.05)';
+  const weekBorder = weekly.weekLevel==='danger' ? 'rgba(232,85,85,.35)'
+                   : weekly.weekLevel==='caution' ? 'rgba(232,160,32,.3)'
+                   : 'rgba(43,171,133,.25)';
+
+  const top3HTML = weekly.top3.length ? weekly.top3.map(e=>{
+    const dn = new Date(e.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(255,255,255,.02);border-radius:4px;font-size:11px;border-left:2px solid ${e.risk>=70?'var(--red)':'var(--amber)'};">
+      <span class="badge ${e.risk>=70?'b-bad':'b-mid'}" style="font-size:9px;">R${e.risk}</span>
+      <span class="mono" style="color:var(--muted);">${esc(dn)} ${esc(e.timeNY||'--:--')}</span>
+      <span style="font-size:10px;color:var(--muted);">${esc(e.country||'')}</span>
+      <span style="font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;">${esc(e.title)}</span>
+    </div>`;
+  }).join('') : '<div style="font-size:11px;color:var(--muted2);padding:6px 10px;">本周无明显高风险事件</div>';
+
+  // ── 5-day strip (use weekDays = Mon-Sun based on FF date) ──
+  // Use only weekday Mon-Fri since markets closed Sat/Sun in our scope
+  const stripDays = weekly.weekDays.filter(d=>{
+    const dt = new Date(d+'T12:00:00');
+    const wd = dt.getUTCDay();
+    return wd>=1 && wd<=5;
+  });
+  const stripHTML = stripDays.map(d=>{
+    const day = weekly.perDay.find(p=>p.dateStr===d) || {summary:{count:0,maxRisk:0},reds:[],oranges:[],speeches:[],level:'safe',advice:''};
+    const dn = new Date(d+'T12:00:00');
+    const dayName = dn.toLocaleDateString('en-US',{weekday:'short'});
+    const dayDate = dn.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const lvlColor = day.level==='danger'?'var(--red)':day.level==='caution'?'var(--amber)':'var(--green)';
+    const lvlBg    = day.level==='danger'?'rgba(232,85,85,.07)':day.level==='caution'?'rgba(232,160,32,.06)':'rgba(43,171,133,.04)';
+    const lvlBorder= day.level==='danger'?'rgba(232,85,85,.35)':day.level==='caution'?'rgba(232,160,32,.3)':'rgba(74,158,240,.18)';
+    const isSelected = d===detailDate;
+    const isToday = d===today;
+    const selRing = isSelected ? `box-shadow:0 0 0 2px var(--accent) inset;` : '';
+    return `<div onclick="MKT_selectDay('${d}')" style="cursor:pointer;border:1px solid ${lvlBorder};${selRing}border-radius:6px;background:${lvlBg};padding:10px;display:flex;flex-direction:column;gap:6px;transition:background .12s;" onmouseover="this.style.background='${lvlBg.replace(/0\.0\d/,'.12')}'" onmouseout="this.style.background='${lvlBg}'">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);">${esc(dayName)}</div>
+          <div style="font-size:10px;color:var(--muted);">${esc(dayDate)}</div>
+        </div>
+        ${isToday?'<span class="badge b-good" style="font-size:9px;">TODAY</span>':''}
+      </div>
+      <div style="display:flex;gap:4px;align-items:center;">
+        ${day.reds.length?`<span class="badge b-bad" style="font-size:9px;">🔴${day.reds.length}</span>`:''}
+        ${day.oranges.length?`<span class="badge b-mid" style="font-size:9px;">🟠${day.oranges.length}</span>`:''}
+        ${day.speeches.length?`<span class="badge b-blue" style="font-size:9px;">🎤${day.speeches.length}</span>`:''}
+        ${(!day.reds.length && !day.oranges.length && !day.speeches.length)?`<span style="font-size:10px;color:var(--muted2);">无重要事件</span>`:''}
+      </div>
+      <div style="font-size:10px;color:${lvlColor};line-height:1.4;font-weight:600;">${day.level==='danger'?'高风险':day.level==='caution'?'中等风险':'低风险'}</div>
+    </div>`;
+  }).join('');
+
+  // ── Detail rows (FF / image 1 style: date | time | currency | impact-icon | event | actual | forecast | previous) ──
+  const detailRows = detailItems.length ? detailItems.map(e=>{
+    const risk = MKT_CAL.eventRisk(e);
+    const isHigh = (e.impact||'').toLowerCase()==='high';
+    const isMed  = (e.impact||'').toLowerCase()==='medium';
+    const isHoliday = (e.impact||'').toLowerCase()==='holiday';
+    const sp = MKT_CAL.isSpeech(e);
+    const impIcon = isHigh ? '<span style="display:inline-block;width:14px;height:11px;background:#cc3a3a;border-radius:2px;" title="High impact"></span>'
+                  : isMed ? '<span style="display:inline-block;width:14px;height:11px;background:#e8a020;border-radius:2px;" title="Medium impact"></span>'
+                  : isHoliday ? '<span style="font-size:11px;" title="Holiday">🏖</span>'
+                  : '<span style="display:inline-block;width:14px;height:11px;background:#5a6070;border-radius:2px;opacity:.5;" title="Low impact"></span>';
+    const titleColor = isHigh ? 'var(--red)' : isMed ? 'var(--amber)' : 'var(--text)';
+    return `<tr ${isHigh?'style="background:rgba(232,85,85,.04);"':isMed?'style="background:rgba(232,160,32,.03);"':''}>
+      <td class="mono" style="font-size:11px;color:var(--muted);width:60px;">${esc(e.timeNY||'all-day')}</td>
+      <td style="font-size:11px;color:var(--text);font-weight:700;width:50px;">${esc(e.country||'')}</td>
+      <td style="width:24px;text-align:center;">${impIcon}</td>
+      <td style="font-weight:600;color:${titleColor};">
+        ${esc(e.title)}
+        ${sp?'<span class="badge b-blue" style="font-size:9px;margin-left:6px;">🎤 SPEECH</span>':''}
+        ${(e.eventType && e.eventType!=='Misc')?`<span class="badge" style="font-size:9px;background:rgba(74,158,240,.1);color:#94c2ed;border:1px solid rgba(74,158,240,.2);margin-left:4px;">${esc(e.eventType)}</span>`:''}
+      </td>
+      <td class="mono" style="font-size:11px;color:var(--muted);text-align:right;width:70px;">${esc(e.actual||'—')}</td>
+      <td class="mono" style="font-size:11px;color:var(--muted);text-align:right;width:70px;">${esc(e.forecast||'—')}</td>
+      <td class="mono" style="font-size:11px;color:var(--muted);text-align:right;width:70px;">${esc(e.previous||'—')}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="7" style="padding:18px 10px;color:var(--muted2);text-align:center;">所选日期无事件 — 试试调整筛选条件或刷新数据</td></tr>`;
+
+  const dnDetail = new Date(detailDate+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+  const detailDayObj = weekly.perDay.find(p=>p.dateStr===detailDate);
+  const detailLevel = detailDayObj?.level || 'safe';
+  const detailLevelColor = detailLevel==='danger'?'var(--red)':detailLevel==='caution'?'var(--amber)':'var(--green)';
+  const detailAdvice = detailDayObj?.advice || '该日无具体建议';
+
+  // ── Active filter badge ──
+  const f = S.mktFilter;
+  const filterActive = (f.impacts.length<4) || (f.currencies.length<9) || (f.types.length<10) || (f.search&&f.search.length>0);
+
+  return `<div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+      <div>
+        <div class="card-title" style="margin:0;">📅 9. Economic Events &amp; Weekly Risk</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px;">本周风险扫描 + 红/橙事件自动分析 → 下发到每天的具体建议</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        <button class="btn-sm ${filterActive?'btn-primary':''}" onclick="MKT_toggleFilterPanel()" title="筛选事件">
+          🔽 筛选 ${filterActive?`<span style="background:rgba(255,255,255,.18);padding:0 5px;border-radius:8px;font-size:9px;margin-left:3px;">ON</span>`:''}
+        </button>
+        ${filteredOut>0?`<span style="font-size:10px;color:var(--muted);">已隐藏 ${filteredOut} 条</span>`:''}
+        <span class="badge b-blue">${filtered.length} 事件</span>
+        ${loading?'<span style="font-size:11px;color:var(--amber);">抓取中...</span>':''}
+        <button class="btn-sm" onclick="MKT_refresh(true)">🔄 刷新</button>
+        <button class="btn-sm" onclick="openEventDrawer()">+ 手动</button>
+      </div>
+    </div>
+    ${errLine}
+    ${S.mktFilter.filterPanelOpen ? renderMktFilterPanel() : ''}
+
+    <!-- Weekly Banner -->
+    <div style="background:${weekBg};border:1px solid ${weekBorder};border-left:4px solid ${weekColor};border-radius:6px;padding:14px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+        <div>
+          <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">本周风险评估</div>
+          <div style="font-size:16px;font-weight:700;color:${weekColor};margin-bottom:6px;">${esc(weekly.headline)}</div>
+          <div style="font-size:11px;color:var(--text);line-height:1.6;max-width:680px;">${esc(weekly.weekAdvice)}</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <div class="mc" style="min-width:70px;padding:8px;"><div class="lbl">红色</div><div class="val" style="font-size:18px;color:${weekly.counts.red>=3?'var(--red)':'var(--text)'};">${weekly.counts.red}</div></div>
+          <div class="mc" style="min-width:70px;padding:8px;"><div class="lbl">橙色</div><div class="val" style="font-size:18px;color:${weekly.counts.orange>=4?'var(--amber)':'var(--text)'};">${weekly.counts.orange}</div></div>
+          <div class="mc" style="min-width:70px;padding:8px;"><div class="lbl">讲话</div><div class="val" style="font-size:18px;color:var(--text);">${weekly.counts.speech}</div></div>
+          <div class="mc" style="min-width:70px;padding:8px;"><div class="lbl">假期</div><div class="val" style="font-size:18px;color:var(--text);">${weekly.counts.holiday}</div></div>
+        </div>
+      </div>
+      <div style="border-top:1px dashed rgba(255,255,255,.06);padding-top:10px;">
+        <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">本周 TOP 3 风险事件</div>
+        <div style="display:flex;flex-direction:column;gap:4px;">${top3HTML}</div>
+      </div>
+    </div>
+
+    <!-- 5-day strip -->
+    <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">本周日历 — 点击查看具体事件</div>
+    <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:14px;">
+      ${stripHTML}
+    </div>
+
+    <!-- Detail panel for selected day -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);">${esc(dnDetail)} ${detailDate===today?'<span class="badge b-good" style="font-size:9px;margin-left:6px;">TODAY</span>':''}</div>
+          <div style="font-size:11px;color:${detailLevelColor};font-weight:600;margin-top:4px;">${esc(detailAdvice)}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-sm" onclick="MKT_selectDay('${today}')">回到今日</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto;"><table style="width:100%;font-size:12px;">
+        <thead>
+          <tr style="background:#1a1f2c;">
+            <th style="font-size:9px;padding:6px;color:var(--muted);text-align:left;" title="${esc(dispTZ)}">时间 (${esc(MKT_CAL._tzShortLabel(dispTZ))})</th>
+            <th style="font-size:9px;padding:6px;color:var(--muted);text-align:left;">CCY</th>
+            <th style="font-size:9px;padding:6px;color:var(--muted);text-align:center;">影响</th>
+            <th style="font-size:9px;padding:6px;color:var(--muted);text-align:left;">事件</th>
+            <th style="font-size:9px;padding:6px;color:var(--muted);text-align:right;">实际</th>
+            <th style="font-size:9px;padding:6px;color:var(--muted);text-align:right;">预测</th>
+            <th style="font-size:9px;padding:6px;color:var(--muted);text-align:right;">前值</th>
+          </tr>
+        </thead>
+        <tbody>${detailRows}</tbody>
+      </table></div>
+    </div>
+
+    <div class="small-note" style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+      <span>数据源：ForexFactory XML（本周 + 下周）${sourceFF?`，已加载 ${sourceFF} 条`:''}${sourceManual?` + ${sourceManual} 条手动/金十`:''}。FF 原始时区为 <strong>US Eastern (EDT/EST)</strong>，已自动换算到下方所选显示时区。</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;">
+        显示时区：
+        <select onchange="MKT_changeDisplayTZ(this.value)" style="font-size:11px;padding:3px 6px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:3px;">
+          <option value="" ${!localStorage.getItem('pg_mkt_displayTZ')?'selected':''}>🌐 浏览器本地 (${esc(MKT_CAL._tzShortLabel(Intl.DateTimeFormat().resolvedOptions().timeZone))})</option>
+          <option value="Asia/Shanghai" ${dispTZ==='Asia/Shanghai'?'selected':''}>北京 / 上海</option>
+          <option value="Asia/Hong_Kong" ${dispTZ==='Asia/Hong_Kong'?'selected':''}>香港</option>
+          <option value="Asia/Tokyo" ${dispTZ==='Asia/Tokyo'?'selected':''}>东京</option>
+          <option value="Asia/Singapore" ${dispTZ==='Asia/Singapore'?'selected':''}>新加坡</option>
+          <option value="Europe/London" ${dispTZ==='Europe/London'?'selected':''}>伦敦</option>
+          <option value="America/New_York" ${dispTZ==='America/New_York'?'selected':''}>纽约 (与 ForexFactory 网站默认一致)</option>
+          <option value="UTC" ${dispTZ==='UTC'?'selected':''}>UTC</option>
+        </select>
+      </span>
+    </div>
+  </div>`;
+}
+
+// ── Filter popup (matches Forex Factory's Filter UI from image 2) ──
+function renderMktFilterPanel(){
+  const f = S.mktFilter;
+  const allImpacts = ['High','Medium','Low','Holiday'];
+  const impactLabels = {High:'🔴 红',Medium:'🟠 橙',Low:'🟡 黄',Holiday:'🏖 假期'};
+  const allCcy = ['USD','EUR','GBP','JPY','CNY','CAD','AUD','NZD','CHF'];
+  const allTypes = ['Growth','Inflation','Employment','Central Bank','Speeches','Bonds','Housing','Consumer Surveys','Business Surveys','Misc'];
+  const cb = (group, key, label) => {
+    const checked = (f[group]||[]).includes(key);
+    return `<label class="check-row" style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;cursor:pointer;">
+      <input type="checkbox" ${checked?'checked':''} onchange="MKT_toggleFilter('${group}','${esc(key)}',this.checked)" style="margin:0;width:14px;height:14px;cursor:pointer;">
+      <span>${label}</span>
+    </label>`;
+  };
+  return `<div style="background:var(--surface2);border:2px solid var(--accent);border-radius:6px;padding:14px;margin-bottom:12px;box-shadow:0 4px 16px rgba(0,0,0,.4);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="font-size:13px;font-weight:700;color:var(--text);">🔽 事件筛选</div>
+      <button class="btn-sm" onclick="MKT_toggleFilterPanel()">✕ 关闭</button>
+    </div>
+
+    <div class="g3" style="margin-bottom:12px;">
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;">Expected Impact</div>
+          <div style="font-size:10px;color:var(--accent);"><a href="javascript:MKT_filterAll('impacts')" style="color:var(--accent);">all</a> · <a href="javascript:MKT_filterNone('impacts')" style="color:var(--muted);">none</a></div>
+        </div>
+        ${allImpacts.map(i=>cb('impacts',i,impactLabels[i])).join('')}
+      </div>
+
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;">Event Types</div>
+          <div style="font-size:10px;color:var(--accent);"><a href="javascript:MKT_filterAll('types')" style="color:var(--accent);">all</a> · <a href="javascript:MKT_filterNone('types')" style="color:var(--muted);">none</a></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 8px;">
+          ${allTypes.map(t=>cb('types',t,t)).join('')}
+        </div>
+      </div>
+
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;">Currencies</div>
+          <div style="font-size:10px;color:var(--accent);"><a href="javascript:MKT_filterAll('currencies')" style="color:var(--accent);">all</a> · <a href="javascript:MKT_filterNone('currencies')" style="color:var(--muted);">none</a></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 8px;">
+          ${allCcy.map(c=>cb('currencies',c,c)).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;padding:10px;background:rgba(0,0,0,.2);border-radius:4px;margin-bottom:12px;">
+      <span style="font-size:11px;color:var(--muted);">关键字搜索：</span>
+      <input type="text" placeholder="例如 CPI / Powell / FOMC" value="${esc(f.search||'')}" oninput="MKT_setSearch(this.value)" style="flex:1;font-size:12px;padding:5px 10px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:3px;">
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <button class="btn-sm" onclick="MKT_resetFilter()" style="color:var(--red);">🗑 Remove Filter</button>
+      <button class="btn-sm btn-primary" onclick="MKT_toggleFilterPanel()">✓ Apply</button>
+    </div>
+  </div>`;
+}
+
+// ── Filter actions ──
+window.MKT_toggleFilterPanel = function(){
+  S.mktFilter.filterPanelOpen = !S.mktFilter.filterPanelOpen;
+  if(S.page==='roadmap') renderRoadmap();
+};
+window.MKT_toggleFilter = function(group, key, checked){
+  const list = S.mktFilter[group] || [];
+  if(checked){ if(!list.includes(key)) list.push(key); }
+  else { S.mktFilter[group] = list.filter(x=>x!==key); }
+  if(checked) S.mktFilter[group] = list;
+  // Persist
+  try{ localStorage.setItem('pg_mkt_filter', JSON.stringify(S.mktFilter)); }catch(e){}
+  if(S.page==='roadmap') renderRoadmap();
+};
+window.MKT_filterAll = function(group){
+  const all = {
+    impacts:['High','Medium','Low','Holiday'],
+    currencies:['USD','EUR','GBP','JPY','CNY','CAD','AUD','NZD','CHF'],
+    types:['Growth','Inflation','Employment','Central Bank','Speeches','Bonds','Housing','Consumer Surveys','Business Surveys','Misc']
+  };
+  S.mktFilter[group] = all[group] || [];
+  try{ localStorage.setItem('pg_mkt_filter', JSON.stringify(S.mktFilter)); }catch(e){}
+  if(S.page==='roadmap') renderRoadmap();
+};
+window.MKT_filterNone = function(group){
+  S.mktFilter[group] = [];
+  try{ localStorage.setItem('pg_mkt_filter', JSON.stringify(S.mktFilter)); }catch(e){}
+  if(S.page==='roadmap') renderRoadmap();
+};
+window.MKT_setSearch = function(v){
+  S.mktFilter.search = v;
+  try{ localStorage.setItem('pg_mkt_filter', JSON.stringify(S.mktFilter)); }catch(e){}
+  // Don't full re-render on every keystroke (would lose focus); update only on changes that matter
+  // The next render (e.g. tab switch) will pick it up.
+  // Use a debounce timer for live update:
+  if(window._mktSearchT) clearTimeout(window._mktSearchT);
+  window._mktSearchT = setTimeout(()=>{ if(S.page==='roadmap') renderRoadmap(); }, 350);
+};
+window.MKT_resetFilter = function(){
+  S.mktFilter.impacts    = ['High','Medium','Low','Holiday'];
+  S.mktFilter.currencies = ['USD','EUR','GBP','JPY','CNY','CAD','AUD','NZD','CHF'];
+  S.mktFilter.types      = ['Growth','Inflation','Employment','Central Bank','Speeches','Bonds','Housing','Consumer Surveys','Business Surveys','Misc'];
+  S.mktFilter.search     = '';
+  try{ localStorage.setItem('pg_mkt_filter', JSON.stringify(S.mktFilter)); }catch(e){}
+  if(S.page==='roadmap') renderRoadmap();
+};
+window.MKT_selectDay = function(d){
+  S.mktSelectedDate = d;
+  if(S.page==='roadmap') renderRoadmap();
+};
+
+// Add a short user-friendly label for a timezone (e.g. "CST", "EDT", "BST").
+// Used in column headers so the user knows which TZ they're looking at.
+MKT_CAL._tzShortLabel = function(tz){
+  if(!tz) return '本地';
+  try{
+    const parts = new Intl.DateTimeFormat('en-US', {timeZone: tz, timeZoneName:'short'}).formatToParts(new Date());
+    const tzPart = parts.find(p=>p.type==='timeZoneName');
+    if(tzPart && tzPart.value) return tzPart.value;
+  }catch(e){}
+  // Fallback: short city name
+  const m = tz.match(/\/([^/]+)$/);
+  return m ? m[1].replace(/_/g,' ') : tz;
+};
+
+// Change the display timezone (called from the dropdown in the market card footer).
+// Empty value means "use browser local".
+window.MKT_changeDisplayTZ = function(tz){
+  if(!tz){
+    try{ localStorage.removeItem('pg_mkt_displayTZ'); }catch(e){}
+    MKT_CAL._displayTZOverride = null;
+  } else {
+    MKT_CAL.setDisplayTZ(tz);
+  }
+  // Reproject all events to the new TZ
+  MKT_CAL.reprojectEvents();
+  // Update the selected day to the new "today" so user isn't stuck on a now-empty day
+  S.mktSelectedDate = null;
+  if(S.page==='roadmap') renderRoadmap();
+};
+
+// Restore saved filter on startup
+try{
+  const saved = JSON.parse(localStorage.getItem('pg_mkt_filter')||'null');
+  if(saved){ Object.assign(S.mktFilter, saved); S.mktFilter.filterPanelOpen=false; }
+}catch(e){}
 
 // ════ JOURNAL PAGE ════
 function ensureTodayJournal(){
@@ -2800,6 +4051,8 @@ function renderJournalSelectedSummary(j, ac, analysis, engine){
       <div class="journal-stat-box"><div class="k">准备度</div><div class="v" style="color:${analysis.prepScore>=75?'var(--green)':analysis.prepScore>=55?'var(--amber)':'var(--red)'}">${analysis.prepScore}</div></div>
       <div class="journal-stat-box"><div class="k">违规 / 疑似</div><div class="v">${comp} / ${susp}</div></div>
       <div class="journal-stat-box"><div class="k">高风险单</div><div class="v" style="color:${analysis.stats.highRisk>0?'var(--amber)':'var(--green)'}">${analysis.stats.highRisk}</div></div>
+      <div class="journal-stat-box"><div class="k">Macro 内 / 外</div><div class="v" style="font-size:16px;"><span style="color:${analysis.stats.macroCount?'var(--accent)':'var(--muted2)'};">${analysis.stats.macroCount}</span><span style="color:var(--muted2);"> / ${analysis.stats.nonMacroCount}</span></div></div>
+      <div class="journal-stat-box"><div class="k">Macro P/L</div><div class="v" style="color:${pnlC(analysis.stats.macroPnl)};font-size:16px;">${analysis.stats.macroCount?$m(analysis.stats.macroPnl):'—'}</div></div>
       <div class="journal-stat-box"><div class="k">今日结论</div><div class="v" style="font-size:18px;font-family:inherit;">${analysis.verdict}</div></div>
     </div>
   </div>`;
@@ -2865,6 +4118,9 @@ function renderJournal(){
         <div class="srow"><span>违规 / 疑似</span><span class="mono">${analysis.stats.violations} / ${analysis.stats.suspected}</span></div>
         <div class="srow"><span>高风险单</span><span class="mono">${analysis.stats.highRisk}</span></div>
         <div class="srow"><span>按计划率</span><span class="mono">${$p(analysis.stats.followRate)}</span></div>
+        <div class="srow" style="border-top:1px dashed var(--border);padding-top:6px;"><span>✓ Macro 内 / ✗ 外</span><span><span class="mono" style="color:var(--accent);font-weight:700;">${analysis.stats.macroCount}</span> / <span class="mono" style="color:var(--muted);">${analysis.stats.nonMacroCount}</span></span></div>
+        <div class="srow"><span>Macro 内 P/L · 胜率</span><span><span class="mono" style="color:${pnlC(analysis.stats.macroPnl)};font-weight:700;">${analysis.stats.macroCount?$m(analysis.stats.macroPnl):'—'}</span>${analysis.stats.macroCount?` · <span class="mono">${analysis.stats.macroWR.toFixed(0)}%</span>`:''}</span></div>
+        ${Object.keys(analysis.stats.macroCounts||{}).length?`<div style="font-size:11px;color:var(--muted);margin-top:6px;padding:6px 8px;background:rgba(59,108,248,.05);border-radius:4px;">命中 Macro：${Object.keys(analysis.stats.macroCounts).map(k=>`<span style="color:var(--text);">${esc(k)}</span> ×${analysis.stats.macroCounts[k]}`).join(' · ')}</div>`:''}
       </div>
 
       <div class="journal-mini-card">
@@ -3633,6 +4889,428 @@ function renderImport(){
 </div>`;
 }
 
+// ════ SETTINGS PAGE — Time Engine (TZ · DST · Killzones · ICT Macros) ════
+function renderSettings(){
+  const st = TIME_ENGINE.settings;
+  const tzList = ['Asia/Shanghai','Asia/Hong_Kong','Asia/Tokyo','Asia/Singapore','Europe/London','America/New_York','America/Los_Angeles','UTC'];
+  const nowNY = TIME_ENGINE.nowNY();
+  const nowLocal = new Date();
+  const localTZ = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Local';
+  const activeMacro = TIME_ENGINE.currentActiveMacro();
+  const nextM = TIME_ENGINE.nextMacroToday();
+  const fmt2 = n => String(n).padStart(2,'0');
+  const pad = (hm) => `${fmt2(hm[0])}:${fmt2(hm[1])}`;
+  const currentKillzone = TIME_ENGINE.detectKillzone(nowNY);
+  const enabledKillzones = Object.entries(st.killzones).filter(([,k])=>k.enabled!==false);
+  const enabledMacros = st.macros.filter(m=>m.enabled!==false).sort((a,b)=>(a.start[0]*60+a.start[1])-(b.start[0]*60+b.start[1]));
+
+  document.getElementById('page-content').innerHTML = `
+  <div class="section-hd">
+    <div>
+      <div class="page-title">时间设置</div>
+      <div class="page-sub">本页已合并 时区 / DST / 时段 / ICT Macro 设置；所有 Killzone / ICT Macro 时间均以 <strong style="color:var(--text);">纽约时间</strong> 为基准</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;position:relative;">
+      <button class="btn-sm" onclick="settingsTogglePicker(event)">页面筛选 ▾</button>
+      <div id="settings-picker-pop" style="display:none;position:absolute;right:0;top:34px;z-index:30;width:190px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;box-shadow:0 14px 40px rgba(0,0,0,.45);">
+        <button class="filter-btn" style="width:100%;justify-content:flex-start;margin-bottom:6px;" onclick="settingsJump('settings-summary')">总览摘要</button>
+        <button class="filter-btn" style="width:100%;justify-content:flex-start;margin-bottom:6px;" onclick="settingsJump('settings-core')">时区 / DST</button>
+        <button class="filter-btn" style="width:100%;justify-content:flex-start;margin-bottom:6px;" onclick="settingsJump('settings-killzones')">Killzones</button>
+        <button class="filter-btn" style="width:100%;justify-content:flex-start;margin-bottom:6px;" onclick="settingsJump('settings-macros')">ICT Macros</button>
+        <button class="filter-btn" style="width:100%;justify-content:flex-start;" onclick="settingsJump('settings-events')">市场事件源</button>
+      </div>
+      <button class="btn-primary btn-sm" onclick="reclassifyAllTrades()">重新分析全部交易</button>
+    </div>
+  </div>
+
+  <div class="g2" style="margin-bottom:12px;align-items:start;">
+    <div style="display:grid;gap:12px;">
+      <div class="card" id="settings-summary" style="margin-bottom:0;background:linear-gradient(135deg,rgba(59,108,248,.06),rgba(43,171,133,.04));">
+        <div class="card-title">现在时间</div>
+        <div class="g2" style="margin-bottom:10px;">
+          <div class="mc" style="margin-bottom:0;">
+            <div class="lbl">本机</div>
+            <div class="val" style="font-size:18px;">${nowLocal.toLocaleTimeString('zh-CN',{hour12:false})}</div>
+            <div class="s">${esc(localTZ)}</div>
+          </div>
+          <div class="mc" style="margin-bottom:0;">
+            <div class="lbl">纽约</div>
+            <div class="val" style="font-size:18px;color:var(--accent);">${nowNY.timeStr}</div>
+            <div class="s">America/New_York</div>
+          </div>
+        </div>
+        <div class="srow"><span>当前 Killzone</span><span class="badge b-blue">${esc(currentKillzone)}</span></div>
+        <div class="srow"><span>Macro 状态</span><span>${activeMacro?`<span class="badge b-good">🟢 ${esc(activeMacro)} 进行中</span>`:`<span style="color:var(--muted);font-size:11px;">下一个: ${nextM?esc(nextM.macro.name)+(nextM.today?' 今日':' 明日'):'—'}</span>`}</span></div>
+      </div>
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-title">时间引擎摘要</div>
+        <div class="g4" style="margin-bottom:10px;">
+          <div class="mc" style="margin-bottom:0;"><div class="lbl">录入时区</div><div class="val" style="font-size:15px;">${esc(st.inputTZ.split('/').pop()||st.inputTZ)}</div><div class="s">${esc(st.inputTZ)}</div></div>
+          <div class="mc" style="margin-bottom:0;"><div class="lbl">DST 模式</div><div class="val" style="font-size:15px;">${st.dstMode==='manual'?'手动':'自动'}</div><div class="s">${st.dstMode==='manual'?'允许覆盖 DST':'跟随系统规则'}</div></div>
+          <div class="mc" style="margin-bottom:0;"><div class="lbl">启用时段</div><div class="val" style="font-size:15px;">${enabledKillzones.length}</div><div class="s">Killzones</div></div>
+          <div class="mc" style="margin-bottom:0;"><div class="lbl">启用 Macro</div><div class="val" style="font-size:15px;">${enabledMacros.length}</div><div class="s">ICT windows</div></div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">已启用时段</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">${enabledKillzones.map(([name,k])=>`<span class="badge" style="background:${k.color}22;color:${k.color};border:1px solid ${k.color}44;">${esc(name)} ${pad(k.start)}-${pad(k.end)}</span>`).join('')}</div>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">最近 Macro</div>
+        <div style="display:grid;gap:6px;">${enabledMacros.slice(0,5).map(m=>`<div class="srow"><span>${esc(m.name)}</span><span class="mono">${pad(m.start)} - ${pad(m.end)}</span></div>`).join('')}</div>
+      </div>
+      <div class="card" id="settings-macros" style="margin-bottom:0;">
+        <div class="form-section" style="margin-top:0;">Macro 设置 / ICT Macros（纽约时间）</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+          <div style="font-size:11px;color:var(--muted);">对应图 1 / 图 6 / 图 7。London Macros 受 London DST 影响；其余 NY Macros 始终为纽约本地时间。</div>
+          <button class="btn-sm" onclick="TE_resetMacros()">还原默认</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;font-size:12px;">
+            <thead><tr style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em;">
+              <th style="text-align:left;padding:5px 8px;width:30px;">启用</th>
+              <th style="text-align:left;padding:5px 8px;">名称</th>
+              <th style="text-align:left;padding:5px 8px;">种类</th>
+              <th style="text-align:left;padding:5px 8px;">开始</th>
+              <th style="text-align:left;padding:5px 8px;">结束</th>
+            </tr></thead>
+            <tbody>
+            ${st.macros.map((m,i)=>`<tr>
+              <td style="padding:6px 8px;"><input type="checkbox" ${m.enabled!==false?'checked':''} onchange="TE_mcEnable(${i},this.checked)"></td>
+              <td style="padding:6px 8px;font-weight:600;">${esc(m.name)}</td>
+              <td style="padding:6px 8px;"><span class="badge ${m.kind==='london'?'b-mid':'b-blue'}">${m.kind==='london'?'London':'NY'}</span></td>
+              <td style="padding:6px 8px;"><input type="time" value="${pad(m.start)}" onchange="TE_mcTime(${i},'start',this.value)" style="width:110px;"></td>
+              <td style="padding:6px 8px;"><input type="time" value="${pad(m.end)}" onchange="TE_mcTime(${i},'end',this.value)" style="width:110px;"></td>
+            </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="settings-core" style="margin-bottom:0;">
+      <div class="card-title">时区 / DST / 时段 / Macro</div>
+      <div class="fg" style="margin-bottom:10px;">
+        <label>交易录入时区（你的电脑 / 经纪商显示的时区）</label>
+        <select onchange="TE_setTZ(this.value)">
+          ${tzList.map(tz=>`<option value="${tz}" ${st.inputTZ===tz?'selected':''}>${tz}</option>`).join('')}
+        </select>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px;">手动录入交易时此时间会被换算到纽约时间进行 Killzone / Macro 判定。Broker CSV (Tradovate / TopStep) 默认已经是纽约时间，不会二次换算。</div>
+      </div>
+      <div class="fg" style="margin-bottom:10px;">
+        <label>夏令时 (DST) 模式</label>
+        <select onchange="TE_setDSTMode(this.value)">
+          <option value="auto" ${st.dstMode==='auto'?'selected':''}>自动（推荐 — 跟随操作系统时区规则）</option>
+          <option value="manual" ${st.dstMode==='manual'?'selected':''}>手动控制</option>
+        </select>
+      </div>
+      <div style="opacity:${st.dstMode==='manual'?1:.4};pointer-events:${st.dstMode==='manual'?'auto':'none'};">
+        <label class="check-row" style="margin-bottom:6px;"><input type="checkbox" ${st.londonDST?'checked':''} onchange="TE_setField('londonDST',this.checked)"> 🇬🇧 London Daylight Saving Time (DST)</label>
+        <div style="font-size:10px;color:var(--muted);margin:0 0 10px 22px;">DST Start: Last Sunday in March at 1:00 UTC · DST End: Last Sunday in October at 1:00 UTC</div>
+        <label class="check-row" style="margin-bottom:6px;"><input type="checkbox" ${st.nyDST?'checked':''} onchange="TE_setField('nyDST',this.checked)"> 🇺🇸 New York Daylight Saving Time (DST)</label>
+        <div style="font-size:10px;color:var(--muted);margin:0 0 4px 22px;">DST Start: Second Sunday in March at 2:00 local · DST End: First Sunday in November at 2:00 local</div>
+      </div>
+      <div class="form-section" id="settings-killzones" style="margin-top:14px;">时段设置 / Killzones（纽约时间）</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+        <div style="font-size:11px;color:var(--muted);">默认值对应图 2：Asia 20:00–00:00 · London 02:00–05:00 · NY AM 09:30–11:00 · NY Lunch 12:00–13:00 · NY PM 13:30–16:00。</div>
+        <button class="btn-sm" onclick="TE_resetKillzones()">还原默认</button>
+      </div>
+      <div style="overflow-x:auto;margin-bottom:12px;">
+        <table style="width:100%;font-size:12px;">
+          <thead><tr style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em;">
+            <th style="text-align:left;padding:5px 8px;width:30px;">启用</th>
+            <th style="text-align:left;padding:5px 8px;">名称</th>
+            <th style="text-align:left;padding:5px 8px;">开始 (NY)</th>
+            <th style="text-align:left;padding:5px 8px;">结束 (NY)</th>
+          </tr></thead>
+          <tbody>
+          ${Object.keys(st.killzones).map(name=>{
+            const k = st.killzones[name];
+            return `<tr>
+              <td style="padding:6px 8px;"><input type="checkbox" ${k.enabled!==false?'checked':''} onchange="TE_kzEnable('${esc(name)}',this.checked)"></td>
+              <td style="padding:6px 8px;"><span class="badge" style="background:${k.color}22;color:${k.color};border:1px solid ${k.color}44;">${esc(name)}</span></td>
+              <td style="padding:6px 8px;"><input type="time" value="${pad(k.start)}" onchange="TE_kzTime('${esc(name)}','start',this.value)" style="width:110px;"></td>
+              <td style="padding:6px 8px;"><input type="time" value="${pad(k.end)}" onchange="TE_kzTime('${esc(name)}','end',this.value)" style="width:110px;"></td>
+            </tr>`;
+          }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="settings-events" style="margin-bottom:12px;">
+    <div class="card-title">📅 市场事件数据源</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.7;">
+      Trading OS 会在加载时自动抓取 <strong>ForexFactory</strong> 本周日历（XML 开源数据源，浏览器可直接访问）并按影响等级评分。
+      <br><strong>金十数据</strong> 无公开浏览器 API，已通过 CORS 代理尝试访问；如代理失败你可以在下方手动录入重要事件。
+    </div>
+    <div style="margin-bottom:10px;">
+      <button class="btn-primary btn-sm" onclick="MKT_refresh(true)">立即刷新 ForexFactory</button>
+      <button class="btn-sm" onclick="openEventDrawer()">+ 手动添加事件</button>
+      <span id="mkt-refresh-status" style="margin-left:10px;font-size:11px;color:var(--muted);"></span>
+    </div>
+    <div id="mkt-events-preview" style="font-size:11px;color:var(--muted);"></div>
+  </div>
+  `;
+
+  // Refresh status line
+  renderMktStatus();
+  renderMktEventsPreview();
+}
+
+window.settingsTogglePicker = function(ev){
+  if(ev) ev.stopPropagation();
+  const pop = document.getElementById('settings-picker-pop');
+  if(!pop) return;
+  pop.style.display = pop.style.display === 'none' || !pop.style.display ? 'block' : 'none';
+};
+window.settingsJump = function(id){
+  const pop = document.getElementById('settings-picker-pop');
+  if(pop) pop.style.display = 'none';
+  const el = document.getElementById(id);
+  if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+};
+
+// ── Time Engine setters ──
+window.TE_setTZ = function(v){ TIME_ENGINE.settings.inputTZ = v; TIME_ENGINE.save(); renderSettings(); };
+window.TE_setDSTMode = function(v){ TIME_ENGINE.settings.dstMode = v; TIME_ENGINE.save(); renderSettings(); };
+window.TE_setField = function(f,v){ TIME_ENGINE.settings[f] = v; TIME_ENGINE.save(); };
+window.TE_kzEnable = function(name,v){ if(TIME_ENGINE.settings.killzones[name]){ TIME_ENGINE.settings.killzones[name].enabled = v; TIME_ENGINE.save(); } };
+window.TE_kzTime = function(name,field,v){
+  const tm = v.match(/^(\d{1,2}):(\d{2})$/); if(!tm) return;
+  const arr = [parseInt(tm[1]),parseInt(tm[2])];
+  if(TIME_ENGINE.settings.killzones[name]){ TIME_ENGINE.settings.killzones[name][field] = arr; TIME_ENGINE.save(); }
+};
+window.TE_mcEnable = function(idx,v){ if(TIME_ENGINE.settings.macros[idx]){ TIME_ENGINE.settings.macros[idx].enabled = v; TIME_ENGINE.save(); } };
+window.TE_mcTime = function(idx,field,v){
+  const tm = v.match(/^(\d{1,2}):(\d{2})$/); if(!tm) return;
+  const arr = [parseInt(tm[1]),parseInt(tm[2])];
+  if(TIME_ENGINE.settings.macros[idx]){ TIME_ENGINE.settings.macros[idx][field] = arr; TIME_ENGINE.save(); }
+};
+window.TE_resetKillzones = function(){
+  if(!confirm('还原 Killzone 时间为默认值？')) return;
+  TIME_ENGINE.settings.killzones = {
+    'Asia':     { start:[20,0],  end:[24,0],  color:'#3b6cf8', enabled:true },
+    'London':   { start:[2,0],   end:[5,0],   color:'#94a3b8', enabled:true },
+    'NY AM':    { start:[9,30],  end:[11,0],  color:'#2bab85', enabled:true },
+    'NY Lunch': { start:[12,0],  end:[13,0],  color:'#e8a020', enabled:true },
+    'NY PM':    { start:[13,30], end:[16,0],  color:'#a855f7', enabled:true }
+  };
+  TIME_ENGINE.save(); renderSettings();
+};
+window.TE_resetMacros = function(){
+  if(!confirm('还原 ICT Macros 为默认值？')) return;
+  TIME_ENGINE.settings.macros = [
+    { id:'ldn_0233', name:'London 02:33', start:[2,33],  end:[3,0],   kind:'london', enabled:true },
+    { id:'ldn_0403', name:'London 04:03', start:[4,3],   end:[4,30],  kind:'london', enabled:true },
+    { id:'ny_0850',  name:'NY 08:50',     start:[8,50],  end:[9,10],  kind:'ny',     enabled:true },
+    { id:'ny_0950',  name:'NY 09:50',     start:[9,50],  end:[10,10], kind:'ny',     enabled:true },
+    { id:'ny_1050',  name:'NY 10:50',     start:[10,50], end:[11,10], kind:'ny',     enabled:true },
+    { id:'ny_1150',  name:'NY 11:50 Launch', start:[11,50], end:[12,10], kind:'ny', enabled:true },
+    { id:'ny_1310',  name:'NY 13:10',     start:[13,10], end:[13,40], kind:'ny',     enabled:true },
+    { id:'ny_1515',  name:'NY 15:15',     start:[15,15], end:[15,45], kind:'ny',     enabled:true }
+  ];
+  TIME_ENGINE.save(); renderSettings();
+};
+
+// Reclassify existing trades after user changes killzones/macros/DST settings.
+window.reclassifyAllTrades = async function(){
+  if(!window.fbUpdateDoc){ alert('请先登录'); return; }
+  if(!confirm(`将使用当前时区 / Killzone / Macro 设置重新分析 ${S.trades.length} 条历史交易？这会更新 session 与 macroWindow 字段。`)) return;
+  setSyncStatus('saving','重新分析中...');
+  let n = 0;
+  for(const t of S.trades){
+    const sess = autoSession(t.date, t.time||'');
+    const mac  = autoMacro(t.date, t.time||'') || '';
+    if(sess !== t.session || mac !== (t.macroWindow||'')){
+      await window.fbUpdateDoc('trades', t.id, {session:sess, macroWindow:mac});
+      n++;
+    }
+  }
+  setSyncStatus('ok','已同步');
+  alert(`✓ 已更新 ${n} 条交易`);
+};
+
+function renderMktStatus(){
+  const el = document.getElementById('mkt-refresh-status'); if(!el) return;
+  if(S.mktEventsLoading) el.innerHTML = '<span style="color:var(--amber);">抓取中...</span>';
+  else if(S.mktEventsError) el.innerHTML = `<span style="color:var(--red);">失败：${esc(S.mktEventsError)}</span>`;
+  else if(S.mktEventsLoaded) el.innerHTML = `<span style="color:var(--green);">已加载 ${S.marketEvents.length} 条事件</span>`;
+  else el.innerHTML = '<span style="color:var(--muted);">未加载</span>';
+}
+
+function renderMktEventsPreview(){
+  const el = document.getElementById('mkt-events-preview'); if(!el) return;
+  if(!S.marketEvents.length){ el.innerHTML = '<div class="empty" style="padding:1rem 0;">暂无事件。点击"立即刷新 ForexFactory"开始。</div>'; return; }
+  const today = TIME_ENGINE.nowNY().dateStr;
+  const upcoming = S.marketEvents.filter(e=>e.date>=today).slice(0,20);
+  el.innerHTML = `<div class="tbl-wrap"><table><thead><tr><th>日期</th><th>时间 (FF)</th><th>货币</th><th>影响</th><th>事件</th><th>来源</th></tr></thead><tbody>
+    ${upcoming.map(e=>`<tr>
+      <td class="mono" style="font-size:11px;">${esc(e.date)}</td>
+      <td class="mono" style="font-size:11px;">${esc(e.timeNY||'--')}</td>
+      <td>${esc(e.country||'—')}</td>
+      <td>${impactBadge(e.impact)}</td>
+      <td style="max-width:260px;">${esc(e.title)}</td>
+      <td style="font-size:10px;color:var(--muted);">${esc(e.source==='forexfactory'?'FF':e.source==='jin10'?'金十':'手动')}</td>
+    </tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+function impactBadge(imp){
+  const v = String(imp||'').toLowerCase();
+  if(v==='high' || v==='红' || v==='★★★') return '<span class="badge b-bad">🔴 高</span>';
+  if(v==='medium' || v==='orange' || v==='★★') return '<span class="badge b-mid">🟠 中</span>';
+  if(v==='holiday') return '<span class="badge b-blue">🏖 假期</span>';
+  return '<span class="badge b-good">🟡 低</span>';
+}
+
+// ── Market events: fetch + persist ──
+// Fetches both THIS WEEK and NEXT WEEK in parallel for richer planning.
+window.MKT_refresh = async function(force){
+  if(S.mktEventsLoading) return;
+  S.mktEventsLoading = true; S.mktEventsError = ''; renderMktStatus();
+  try{
+    let xmlThis = null, xmlNext = null, lastErr = null;
+    // This week
+    for(const url of MKT_CAL.FF_URLS){
+      try{ xmlThis = await MKT_CAL.fetchWithFallback(url); if(xmlThis) break; }
+      catch(e){ lastErr = e; }
+    }
+    if(!xmlThis) throw lastErr || new Error('ForexFactory 抓取失败');
+    // Next week (best-effort; failure here is non-fatal)
+    for(const url of MKT_CAL.FF_URLS_NEXT){
+      try{ xmlNext = await MKT_CAL.fetchWithFallback(url); if(xmlNext) break; }
+      catch(e){ /* try next */ }
+    }
+    let events = MKT_CAL.parseFFXML(xmlThis);
+    if(xmlNext){
+      try{
+        const nextEvts = MKT_CAL.parseFFXML(xmlNext);
+        // dedupe by id
+        const seen = new Set(events.map(e=>e.id));
+        nextEvts.forEach(e=>{ if(!seen.has(e.id)) events.push(e); });
+      }catch(_){}
+    }
+    // Always re-tag (eventType / isSpeech) — handles legacy cached data
+    events.forEach(e=>{
+      if(!e.eventType) e.eventType = MKT_CAL.categorize(e);
+      if(e.isSpeech === undefined) e.isSpeech = MKT_CAL.isSpeech(e);
+    });
+    // Merge with manual events (keep manual entries + replace FF ones with fresh fetch)
+    const manual = S.marketEvents.filter(e=>e.source==='manual' || e.source==='jin10');
+    manual.forEach(e=>{
+      if(!e.eventType) e.eventType = MKT_CAL.categorize(e);
+      if(e.isSpeech === undefined) e.isSpeech = MKT_CAL.isSpeech(e);
+    });
+    S.marketEvents = [...manual, ...events].sort((a,b)=>(a.date+a.timeNY).localeCompare(b.date+b.timeNY));
+    S.mktEventsLoaded = true;
+    try{ localStorage.setItem('pg_mkt_events_ff', JSON.stringify({ts:Date.now(), events})); }catch(e){}
+  }catch(e){
+    S.mktEventsError = e.message || '网络错误';
+    // Try localStorage cache
+    try{
+      const cached = JSON.parse(localStorage.getItem('pg_mkt_events_ff')||'null');
+      if(cached && cached.events && Array.isArray(cached.events)){
+        cached.events.forEach(e=>{
+          if(!e.eventType) e.eventType = MKT_CAL.categorize(e);
+          if(e.isSpeech === undefined) e.isSpeech = MKT_CAL.isSpeech(e);
+        });
+        const manual = S.marketEvents.filter(ev=>ev.source==='manual'||ev.source==='jin10');
+        S.marketEvents = [...manual, ...cached.events].sort((a,b)=>(a.date+a.timeNY).localeCompare(b.date+b.timeNY));
+        S.mktEventsLoaded = true;
+        S.mktEventsError += '（使用上次缓存）';
+      }
+    }catch(_){}
+  }
+  S.mktEventsLoading = false;
+  renderMktStatus(); renderMktEventsPreview();
+  if(S.page==='roadmap') renderRoadmap();
+};
+
+window.openEventDrawer = function(){
+  const d = TIME_ENGINE.nowNY().dateStr;
+  const drawer = document.createElement('div');
+  drawer.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:center;justify-content:center;';
+  drawer.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;width:90%;max-width:460px;">
+    <div style="font-size:14px;font-weight:700;margin-bottom:12px;">添加市场事件</div>
+    <div class="form-row">
+      <div class="fg"><label>日期 (FF)</label><input type="date" id="evf-d" value="${d}"></div>
+      <div class="fg"><label>时间 (FF, HH:MM)</label><input type="time" id="evf-t" value="09:30"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>国家/货币</label><input id="evf-c" placeholder="USD / CNY / EUR / ..."></div>
+      <div class="fg"><label>影响等级</label><select id="evf-i"><option value="High">🔴 高</option><option value="Medium">🟠 中</option><option value="Low">🟡 低</option><option value="Holiday">🏖 假期</option></select></div>
+    </div>
+    <div class="fg" style="margin-bottom:10px;"><label>事件标题</label><input id="evf-t2" placeholder="FOMC Rate Decision / CPI / NFP ..."></div>
+    <div class="fg" style="margin-bottom:14px;"><label>备注（可选）</label><textarea id="evf-n" rows="2" placeholder="金十：美联储 2:30 会议"></textarea></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <button onclick="this.closest('div[style*=\\'inset:0\\']').remove()">取消</button>
+      <button class="btn-primary" onclick="saveManualEvent()">保存</button>
+    </div>
+  </div>`;
+  drawer.addEventListener('click', e=>{ if(e.target===drawer) drawer.remove(); });
+  document.body.appendChild(drawer);
+};
+
+window.saveManualEvent = async function(){
+  const inDate = document.getElementById('evf-d').value;
+  const inTime = document.getElementById('evf-t').value;
+  if(!inDate){ alert('请至少填写日期'); return; }
+  // Treat manual entries as US Eastern time (matches the FF source TZ),
+  // compute the absolute UTC instant, then project to current display TZ.
+  const dm = inDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!dm){ alert('日期格式不正确'); return; }
+  const y=+dm[1], mo=+dm[2], d=+dm[3];
+  let h=0, mi=0;
+  const tm = (inTime||'').match(/^(\d{1,2}):(\d{2})/);
+  if(tm){ h=+tm[1]; mi=+tm[2]; }
+  const off = TIME_ENGINE._tzOffsetMin('America/New_York', y, mo, d, h, mi);
+  const utcMs = Date.UTC(y, mo-1, d, h, mi) - off*60000;
+  const dispTZ = MKT_CAL.getDisplayTZ();
+  const disp = MKT_CAL._wallClockInTZ(utcMs, dispTZ);
+  const ev = {
+    id: 'mn_'+uid(),
+    source: 'manual',
+    srcDate: inDate,
+    srcTime: inTime||'',
+    srcTZ: 'America/New_York',
+    utcMs,
+    date: `${disp.year}-${String(disp.month).padStart(2,'0')}-${String(disp.day).padStart(2,'0')}`,
+    timeNY: inTime ? `${String(disp.hour).padStart(2,'0')}:${String(disp.minute).padStart(2,'0')}` : '',
+    country: document.getElementById('evf-c').value.trim().toUpperCase(),
+    impact: document.getElementById('evf-i').value,
+    title: document.getElementById('evf-t2').value.trim(),
+    notes: document.getElementById('evf-n').value.trim(),
+    forecast:'', previous:''
+  };
+  if(!ev.title){ alert('请至少填写标题'); return; }
+  ev.eventType = MKT_CAL.categorize(ev);
+  ev.isSpeech  = MKT_CAL.isSpeech(ev);
+  S.marketEvents.push(ev);
+  try{ localStorage.setItem('pg_mkt_events_manual', JSON.stringify(S.marketEvents.filter(e=>e.source==='manual'||e.source==='jin10'))); }catch(e){}
+  if(window.fbSetDoc){
+    try{ await window.fbSetDoc('market_events', ev.id, ev); }catch(e){}
+  }
+  document.querySelectorAll('div[style*="inset:0"]').forEach(d=>d.remove());
+  renderMktEventsPreview();
+  if(S.page==='roadmap') renderRoadmap();
+};
+
+// Load cached manual events on startup
+(function loadCachedEvents(){
+  try{
+    const manual = JSON.parse(localStorage.getItem('pg_mkt_events_manual')||'[]');
+    const cached = JSON.parse(localStorage.getItem('pg_mkt_events_ff')||'null');
+    const ff = (cached && cached.events) || [];
+    S.marketEvents = [...manual, ...ff];
+    // Re-project to current display TZ so cached data shows correctly even
+    // if the user changed display TZ since last fetch.
+    try{ MKT_CAL.reprojectEvents(); }catch(e){}
+    S.marketEvents.sort((a,b)=>{
+      if(a.utcMs && b.utcMs) return a.utcMs - b.utcMs;
+      return (a.date+a.timeNY).localeCompare(b.date+b.timeNY);
+    });
+    if(S.marketEvents.length) S.mktEventsLoaded = true;
+  }catch(e){}
+})();
+
+
 function parseCSV(text){
   const lines=text.split(/\r?\n/).filter(l=>l.trim());if(lines.length<2)return[];
   const headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
@@ -3657,50 +5335,77 @@ window.previewCSV=function(type,input){
     try{
       const rows=parseCSV(e.target.result);let trades=[];
       if(type==='tv'){
-        trades=rows.filter(r=>r.symbol||r.sym).map(r=>({
-          sym:(r.symbol||r.sym||'').replace(/[A-Z]\d$/,''),
-          dir:parseFloat(r.buyPrice||0)<parseFloat(r.sellPrice||0)?'Long':'Short',
-          c:parseInt(r.qty||r.size||'1')||1,pnl:parsePnl(r.pnl||r.PnL),
-          date:parseDateStr(r.boughtTimestamp||r.date||''),
-          time:parseTimeStr(r.boughtTimestamp||''),risk:0,
-          _entryPrice:parseFloat(r.buyPrice||0).toFixed(2),
-          _exitPrice:parseFloat(r.sellPrice||0).toFixed(2),
-          session:parseTVSession(r.boughtTimestamp||''),
-          note:`${r.buyPrice||''}→${r.sellPrice||''} ${r.duration||''}`
-        }));
+        trades=rows.filter(r=>r.symbol||r.sym).map(r=>{
+          const raw = r.boughtTimestamp||r.date||'';
+          const date = parseDateStr(raw);
+          const time = parseTimeStr(raw);
+          const cls = classifyFromCSV(raw, date, time, 'tv');
+          return {
+            sym:(r.symbol||r.sym||'').replace(/[A-Z]\d$/,''),
+            dir:parseFloat(r.buyPrice||0)<parseFloat(r.sellPrice||0)?'Long':'Short',
+            c:parseInt(r.qty||r.size||'1')||1,pnl:parsePnl(r.pnl||r.PnL),
+            date, time, risk:0,
+            _entryPrice:parseFloat(r.buyPrice||0).toFixed(2),
+            _exitPrice:parseFloat(r.sellPrice||0).toFixed(2),
+            session: cls.session,
+            macroWindow: cls.macro || '',
+            note:`${r.buyPrice||''}→${r.sellPrice||''} ${r.duration||''}`
+          };
+        });
       } else if(type==='ts'){
-        trades=rows.filter(r=>r.ContractName||r.contract).map(r=>({
-          sym:(r.ContractName||r.contract||'').match(/^[A-Z]+/)?.[0]||'',
-          dir:r.Type||r.direction||'Long',
-          c:parseInt(r.Size||r.size||'1')||1,pnl:parsePnl(r.PnL||r.pnl),
-          date:parseDateStr(r.EnteredAt||r.date||''),
-          time:parseTimeStr(r.EnteredAt||''),risk:0,
-          _csvFees: parsePnl(r.Fees||r.fees||'0') + parsePnl(r.Commissions||r.commissions||'0'),
-          _entryPrice:parseFloat(r.EntryPrice||0).toFixed(1),_exitPrice:parseFloat(r.ExitPrice||0).toFixed(1),note:`进价:${r.EntryPrice||''} 出价:${r.ExitPrice||''}`
-        }));
+        trades=rows.filter(r=>r.ContractName||r.contract).map(r=>{
+          const raw = r.EnteredAt||r.date||'';
+          const date = parseDateStr(raw);
+          const time = parseTimeStr(raw);
+          const cls = classifyFromCSV(raw, date, time, 'ts');
+          return {
+            sym:(r.ContractName||r.contract||'').match(/^[A-Z]+/)?.[0]||'',
+            dir:r.Type||r.direction||'Long',
+            c:parseInt(r.Size||r.size||'1')||1,pnl:parsePnl(r.PnL||r.pnl),
+            date, time, risk:0,
+            _csvFees: parsePnl(r.Fees||r.fees||'0') + parsePnl(r.Commissions||r.commissions||'0'),
+            _entryPrice:parseFloat(r.EntryPrice||0).toFixed(1),_exitPrice:parseFloat(r.ExitPrice||0).toFixed(1),
+            session: cls.session,
+            macroWindow: cls.macro || '',
+            note:`进价:${r.EntryPrice||''} 出价:${r.ExitPrice||''}`
+          };
+        });
       } else if(type==='nt'){
-        trades=rows.filter(r=>r['日期 Date']||r['💰金额']!==undefined).map(r=>({
-          sym:r['Instrument']||r.sym||'其他',dir:r['Bias']==='Bearish'?'Short':'Long',
-          c:parseInt(r['Size']||'1')||1,pnl:parsePnl(r['💰金额']||r.pnl||''),
-          date:parseDateStr(r['日期 Date']||''),time:'',risk:0,
-          session:r['Session']||'NY AM',
-          setup:(r['Set up']||'B').includes('A+')?'A+':'B',
-          note:r['总结']||''
-        }));
+        trades=rows.filter(r=>r['日期 Date']||r['💰金额']!==undefined).map(r=>{
+          const date = parseDateStr(r['日期 Date']||'');
+          const time = r['Time']||r['时间']||'';
+          const cls = classifyFromCSV('', date, time, 'nt');
+          return {
+            sym:r['Instrument']||r.sym||'其他',dir:r['Bias']==='Bearish'?'Short':'Long',
+            c:parseInt(r['Size']||'1')||1,pnl:parsePnl(r['💰金额']||r.pnl||''),
+            date, time, risk:0,
+            session:r['Session']||cls.session||'NY AM',
+            macroWindow: cls.macro || '',
+            setup:(r['Set up']||'B').includes('A+')?'A+':'B',
+            note:r['总结']||''
+          };
+        });
       } else {
-        trades=rows.map(r=>({
-          sym:r.sym||r.symbol||r.instrument||'',dir:r.dir||r.direction||r.side||'Long',
-          c:parseInt(r.c||r.contracts||r.lots||r.size||'1')||1,
-          pnl:parsePnl(r.pnl||r.profit||r.PnL||''),
-          date:parseDateStr(r.date||r.Date||''),time:r.time||r.Time||'',
-          risk:parseFloat(r.risk||'0')||0,note:r.note||r.notes||'',
-          tradeQuality:r.tradeQuality||r.quality||r['Trade Quality']||'B',
-          shouldTrade:(r.shouldTrade||r['Should Trade']||'yes').toString().toLowerCase()==='no'?'no':'yes',
-          shouldTradeReason:r.shouldTradeReason||r.reason||r['Should Trade Reason']||'',
-          holdMinutes:parseFloat(r.holdMinutes||r['Hold Minutes']||'0')||0,
-          beHit:(r.beHit||r['BE Hit']||'no').toString().toLowerCase()==='yes'?'yes':'no',
-          beRunner:(r.beRunner||r['BE Runner']||'na').toString().toLowerCase()
-        }));
+        trades=rows.map(r=>{
+          const date = parseDateStr(r.date||r.Date||'');
+          const time = r.time||r.Time||'';
+          const cls = classifyFromCSV('', date, time, 'gen');
+          return {
+            sym:r.sym||r.symbol||r.instrument||'',dir:r.dir||r.direction||r.side||'Long',
+            c:parseInt(r.c||r.contracts||r.lots||r.size||'1')||1,
+            pnl:parsePnl(r.pnl||r.profit||r.PnL||''),
+            date, time,
+            risk:parseFloat(r.risk||'0')||0,note:r.note||r.notes||'',
+            session: cls.session,
+            macroWindow: cls.macro || '',
+            tradeQuality:r.tradeQuality||r.quality||r['Trade Quality']||'B',
+            shouldTrade:(r.shouldTrade||r['Should Trade']||'yes').toString().toLowerCase()==='no'?'no':'yes',
+            shouldTradeReason:r.shouldTradeReason||r.reason||r['Should Trade Reason']||'',
+            holdMinutes:parseFloat(r.holdMinutes||r['Hold Minutes']||'0')||0,
+            beHit:(r.beHit||r['BE Hit']||'no').toString().toLowerCase()==='yes'?'yes':'no',
+            beRunner:(r.beRunner||r['BE Runner']||'na').toString().toLowerCase()
+          };
+        });
       }
       trades=trades.filter(t=>t.date&&t.sym);
       window[`_csv_${type}`]=trades;
@@ -3759,7 +5464,52 @@ function tradeFP(t){
   // Fingerprint without pnl — immune to commission adjustments and CSV rounding
   return`${t.date}|${(t.time||'').slice(0,5)}|${normSym(t.sym)}|${(t.dir||'').toLowerCase().slice(0,2)}|${t.c||1}|${t._entryPrice||''}|${t._exitPrice||''}`;
 }
-function parseTVSession(ts){if(!ts)return'NY AM';const m=ts.match(/(\d{2}):(\d{2}):\d{2}$/);if(!m)return'NY AM';const h=parseInt(m[1]);if(h>=8&&h<12)return'NY AM';if(h>=12&&h<16)return'NY PM';if(h>=2&&h<8)return'London';return'Asia';}
+function parseTVSession(ts){
+  // Legacy helper retained for backwards compatibility; now backed by TIME_ENGINE.
+  // `ts` from Tradovate/TopStep CSVs is normally already in NY time.
+  // We classify it as NY local (set inputTZ temporarily OR just use the string directly).
+  if(!ts) return 'NY AM';
+  const m = String(ts).match(/(\d{4})-(\d{1,2})-(\d{1,2})[T\s]?(\d{1,2}):(\d{2})/);
+  if(!m){
+    const t = String(ts).match(/(\d{1,2}):(\d{2}):\d{2}$/);
+    if(!t) return 'NY AM';
+    const h=+t[1], mi=+t[2];
+    return TIME_ENGINE.detectKillzone({totalMinutes:h*60+mi,hour:h,minute:mi}) || 'Other';
+  }
+  const h=+m[4], mi=+m[5];
+  return TIME_ENGINE.detectKillzone({totalMinutes:h*60+mi,hour:h,minute:mi}) || 'Other';
+}
+// Classify a raw timestamp string from a CSV. The CSV timestamps from broker exports
+// (Tradovate/TopStep/Lucid) are broker-local — by convention they are already NY time.
+// For Notion/Generic CSVs without TZ info, we assume TIME_ENGINE.settings.inputTZ.
+function classifyFromCSV(tsRaw, dateStr, timeStr, csvType){
+  // csvType: 'tv' | 'ts' | 'nt' | 'gen'
+  if(csvType==='tv' || csvType==='ts'){
+    // Broker-local = NY already. Don't re-convert.
+    const m = String(tsRaw||'').match(/(\d{4})-(\d{1,2})-(\d{1,2})[T\s]?(\d{1,2}):(\d{2})/);
+    if(m){
+      const h=+m[4], mi=+m[5];
+      const fakeNY = {totalMinutes:h*60+mi,hour:h,minute:mi};
+      return { session: TIME_ENGINE.detectKillzone(fakeNY) || 'Other',
+               macro:   TIME_ENGINE.detectMacro(fakeNY) };
+    }
+    // fallback: treat provided date/time as already NY
+    if(dateStr && timeStr){
+      const tm = timeStr.match(/(\d{1,2}):(\d{2})/);
+      if(tm){
+        const fakeNY = {totalMinutes:(+tm[1])*60+(+tm[2]),hour:+tm[1],minute:+tm[2]};
+        return { session: TIME_ENGINE.detectKillzone(fakeNY) || 'Other',
+                 macro:   TIME_ENGINE.detectMacro(fakeNY) };
+      }
+    }
+    return { session:'Other', macro:null };
+  }
+  // nt / gen: apply TIME_ENGINE inputTZ→NY conversion
+  return {
+    session: autoSession(dateStr, timeStr||'00:00'),
+    macro:   autoMacro(dateStr, timeStr||'00:00')
+  };
+}
 
 window.doImport=async function(type){
   const trades=window[`_csv_${type}`];
@@ -3793,6 +5543,7 @@ window.doImport=async function(type){
     commTotal+=comm;
     const newT={id:uid(),aid,...t,pnl:adjPnl,_rawPnl:t.pnl,_commission:comm,
       session:t.session||autoSession(t.date,t.time||''),
+      macroWindow: (t.macroWindow !== undefined) ? t.macroWindow : (autoMacro(t.date,t.time||'')||''),
       followPlan:true,stopLossRespected:true,revenge:false,fomo:false};
     const rt=calcTradeRiskLabel(newT,aid);
     newT.riskLabel=rt.label;newT.riskScore=rt.score;newT.riskReasons=rt.reasons;
@@ -3831,7 +5582,7 @@ function renderRisk(){
   const allRisk=calcAllRisk();
   const prot=RPE.check(S.accounts,S.trades);
   const today=new Date().toISOString().slice(0,10);
-  const globalSession={Asia:0,London:0,'NY AM':0,'NY PM':0};
+  const globalSession={Asia:0,London:0,'NY AM':0,'NY Lunch':0,'NY PM':0};
   const globalDow={0:0,1:0,2:0,3:0,4:0,5:0,6:0};
   const globalMonth={};
   S.trades.forEach(t=>{
@@ -4139,7 +5890,8 @@ window.addTrade=async function(){
     c:parseInt(document.getElementById('ft-c').value)||1,
     pnl:p,risk:parseFloat(document.getElementById('ft-rk').value)||0,
     setup:document.getElementById('ft-se').value,
-    session:autoSession(d,tTime),
+    session:(document.getElementById('ft-ss').value || autoSession(d,tTime)),
+    macroWindow: autoMacro(d,tTime) || '',
     result:document.getElementById('ft-res').value,
     bias:document.getElementById('ft-bias').value,
     tradeQuality:document.getElementById('ft-tq').value,
@@ -4382,7 +6134,130 @@ window.updateLotHint=function(){
   }
 };
 window.toggleSidebar=function(){document.getElementById('sidebar').classList.toggle('open');};
+
+// ══════════════════════════════════════════════════════════
+// ════ MACRO ANALYSIS helpers for Stats / TradingOS / Journal
+// ══════════════════════════════════════════════════════════
+function macroBreakdown(trades){
+  // Per-macro and overall-macro-vs-non-macro stats
+  const list = TIME_ENGINE.settings.macros.filter(m=>m.enabled!==false);
+  const perMacro = list.map(m=>{
+    const arr = trades.filter(t=> (t.macroWindow||autoMacro(t.date,t.time||'')) === m.name );
+    return {
+      name: m.name,
+      count: arr.length,
+      pnl: arr.reduce((s,t)=>s+(t.pnl||0),0),
+      wins: arr.filter(t=>(t.pnl||0)>0).length,
+      winRate: arr.length ? arr.filter(t=>(t.pnl||0)>0).length/arr.length*100 : 0,
+      expectancy: expectancyForTrades(arr),
+      avgPnl: arr.length ? arr.reduce((s,t)=>s+(t.pnl||0),0)/arr.length : 0
+    };
+  });
+  const inMacro = trades.filter(t=>{
+    const mw = t.macroWindow || autoMacro(t.date,t.time||'');
+    return !!mw;
+  });
+  const outMacro = trades.filter(t=>{
+    const mw = t.macroWindow || autoMacro(t.date,t.time||'');
+    return !mw;
+  });
+  const summary = {
+    inCount: inMacro.length,
+    inPnl: inMacro.reduce((s,t)=>s+(t.pnl||0),0),
+    inWR: inMacro.length ? inMacro.filter(t=>(t.pnl||0)>0).length/inMacro.length*100 : 0,
+    inExp: expectancyForTrades(inMacro),
+    outCount: outMacro.length,
+    outPnl: outMacro.reduce((s,t)=>s+(t.pnl||0),0),
+    outWR: outMacro.length ? outMacro.filter(t=>(t.pnl||0)>0).length/outMacro.length*100 : 0,
+    outExp: expectancyForTrades(outMacro)
+  };
+  return { perMacro, summary };
+}
+
+// ══════════════════════════════════════════════════════════
+// ════ MARKET CALENDAR live fetch UI + state
+// ══════════════════════════════════════════════════════════
+window.loadMarketEvents = async function(force){
+  if(S.mktEventsLoading) return;
+  if(!force){
+    try{
+      const cached = localStorage.getItem('pg_mkt_events');
+      const ts = localStorage.getItem('pg_mkt_events_ts');
+      if(cached && ts && (Date.now()-parseInt(ts)) < 6*60*60*1000){
+        S.marketEvents = JSON.parse(cached);
+        S.mktEventsLoaded = true;
+        S.mktEventsError = '';
+        renderPage();
+        return;
+      }
+    }catch(e){}
+  }
+  S.mktEventsLoading = true;
+  S.mktEventsError = '';
+  renderPage();
+  const errors = [];
+  let events = [];
+  for(const url of MKT_CAL.FF_URLS){
+    try{
+      const xml = await MKT_CAL.fetchWithFallback(url, 15000);
+      events = MKT_CAL.parseFFXML(xml);
+      if(events.length) break;
+    }catch(e){ errors.push(e.message||'fetch error'); }
+  }
+  // Merge manually added events from localStorage
+  try{
+    const manual = JSON.parse(localStorage.getItem('pg_mkt_manual')||'[]');
+    events = events.concat(manual);
+  }catch(e){}
+  if(events.length === 0){
+    S.mktEventsError = '未能获取 ForexFactory 数据（可能被网络或 CORS 代理阻断）。你可以稍后再试，或手动录入重要事件。';
+  } else {
+    try{
+      localStorage.setItem('pg_mkt_events', JSON.stringify(events));
+      localStorage.setItem('pg_mkt_events_ts', Date.now().toString());
+    }catch(e){}
+  }
+  S.marketEvents = events;
+  S.mktEventsLoaded = true;
+  S.mktEventsLoading = false;
+  renderPage();
+};
+
+window.addManualEvent = function(){
+  const date = prompt('事件日期 (YYYY-MM-DD)：', new Date().toISOString().slice(0,10));
+  if(!date) return;
+  const time = prompt('事件时间 (FF 时区, 格式 HH:MM；留空=全天)：', '');
+  const title = prompt('事件名称：');
+  if(!title) return;
+  const impact = prompt('影响等级 (High / Medium / Low / Holiday)：', 'High');
+  const country = prompt('国家/货币代号 (USD / EUR / CNY / JPY ...)：', 'USD');
+  const ev = {
+    id:'manual_'+Date.now(),
+    source:'manual',
+    title, country, date,
+    timeNY: time||'',
+    impact: impact||'Low',
+    forecast:'', previous:'', notes:'手动录入'
+  };
+  let list = [];
+  try{ list = JSON.parse(localStorage.getItem('pg_mkt_manual')||'[]'); }catch(e){}
+  list.push(ev);
+  try{ localStorage.setItem('pg_mkt_manual', JSON.stringify(list)); }catch(e){}
+  S.marketEvents = (S.marketEvents||[]).concat([ev]);
+  renderPage();
+};
+
+window.deleteManualEvent = function(id){
+  if(!confirm('删除这条手动录入的事件？')) return;
+  let list = [];
+  try{ list = JSON.parse(localStorage.getItem('pg_mkt_manual')||'[]'); }catch(e){}
+  list = list.filter(e=>e.id!==id);
+  try{ localStorage.setItem('pg_mkt_manual', JSON.stringify(list)); }catch(e){}
+  S.marketEvents = S.marketEvents.filter(e=>e.id!==id);
+  renderPage();
+};
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 </body>
 </html>
+
