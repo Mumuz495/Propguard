@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "rop-uard",
+  "name": "propguard",
   "main": "src/worker.js",
   "compatibility_date": "2026-04-20",
   "observability": {
