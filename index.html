@@ -4151,56 +4151,103 @@ function renderTradingOSMarketCard(){
 }
 
 function renderTrumpSpeechWatchCard(){
-  const tzYMD = (ms, tz)=>{
+  const tz = MKT_CAL.getDisplayTZ();
+  const tzYMD = (ms)=>{
     const d = new Date(ms||Date.now());
     const parts = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(d);
     const get = t => Number(parts.find(p=>p.type===t)?.value || 0);
     return { y:get('year'), m:get('month'), d:get('day') };
   };
-  const weekBucket = (ms, tz, nowMs)=>{
-    const i = tzYMD(ms, tz), n = tzYMD(nowMs, tz);
-    const ord = Math.floor(Date.UTC(i.y, i.m-1, i.d)/86400000);
-    const nowOrd = Math.floor(Date.UTC(n.y, n.m-1, n.d)/86400000);
-    const dow = (new Date(Date.UTC(n.y, n.m-1, n.d)).getUTCDay()+6)%7; // Mon=0
-    const thisStart = nowOrd - dow;
-    if(ord>=thisStart-7 && ord<thisStart) return 'last';
-    if(ord>=thisStart && ord<thisStart+7) return 'this';
-    if(ord>=thisStart+7 && ord<thisStart+14) return 'next';
+  const ordFrom = ({y,m,d})=>Math.floor(Date.UTC(y,m-1,d)/86400000);
+  const now = Date.now();
+  const nowYmd = tzYMD(now);
+  const nowOrd = ordFrom(nowYmd);
+  const dow = (new Date(Date.UTC(nowYmd.y, nowYmd.m-1, nowYmd.d)).getUTCDay()+6)%7;
+  const thisWeekStart = nowOrd - dow;
+  const thisWeekEnd = thisWeekStart + 6;
+  const labelDate = ord => {
+    const dt = new Date(ord*86400000);
+    return dt.toLocaleDateString('en-US',{timeZone:'UTC',month:'short',day:'numeric'});
+  };
+  const weekBucket = ms=>{
+    const ord = ordFrom(tzYMD(ms||now));
+    if(ord>=thisWeekStart-7 && ord<=thisWeekStart-1) return 'last';
+    if(ord>=thisWeekStart && ord<=thisWeekEnd) return 'this';
+    if(ord>=thisWeekStart+7 && ord<=thisWeekStart+13) return 'next';
     return 'other';
   };
-  const buildWeekDigest = (items, tz)=>{
-    const now = Date.now();
-    const buckets = { last:[], this:[], next:[] };
-    (items||[]).forEach(x=>{
-      const b = weekBucket(x.tsUTC||now, tz, now);
-      if(buckets[b]) buckets[b].push(x);
-    });
-    const pack = arr=>{
-      const top = [...arr].sort((a,b)=>(b.severity||0)-(a.severity||0) || (b.tsUTC||0)-(a.tsUTC||0)).slice(0,3);
-      return {
-        count: arr.length,
-        high: arr.filter(x=>(x.severity||0)>=80).length,
-        headlines: top.map(x=>x.title).filter(Boolean)
-      };
+  const dayBucket = ms=>{
+    const ord = ordFrom(tzYMD(ms||now));
+    if(ord===nowOrd-1) return 'yesterday';
+    if(ord===nowOrd) return 'today';
+    if(ord===nowOrd+1) return 'tomorrow';
+    return 'other';
+  };
+  const cleanTitle = t => String(t||'').replace(/https?:\/\/\S+/g,'').replace(/\s+/g,' ').trim();
+  const whereFrom = (x)=>{
+    const tx = `${x.title||''} ${x.reason||''}`.toLowerCase();
+    if(/white house|washington/.test(tx)) return 'Washington';
+    if(/new york/.test(tx)) return 'New York';
+    if(/florida|mar-a-lago/.test(tx)) return 'Florida';
+    if(/iran/.test(tx)) return 'Iran';
+    if(/lebanon/.test(tx)) return 'Lebanon';
+    if(/china/.test(tx)) return 'China';
+    if((x.source||'').includes('factbase')) return 'Campaign Trail';
+    if((x.source||'').includes('x_')) return 'X';
+    return 'US';
+  };
+  const actionFrom = (x)=>{
+    const tx = `${x.title||''}`.toLowerCase();
+    if(/speak|speech|remarks|briefing|address|statement|testif/.test(tx)) return 'speaking';
+    if(/tweet|post|x.com|t\.co/.test(tx) || (x.source||'').includes('x_')) return 'posting';
+    if(/sign|order|executive/.test(tx)) return 'policy move';
+    if(/confirm|announce|urge|say|says/.test(tx)) return 'commenting';
+    return 'update';
+  };
+  const briefLine = x=>{
+    const actor = x.actor || 'Trump';
+    const where = whereFrom(x);
+    const action = actionFrom(x);
+    const headline = cleanTitle(x.title).slice(0,72) || 'No headline';
+    return `${actor} in ${where}: ${action} · ${headline}`;
+  };
+  const packDigest = arr=>{
+    const top = [...arr].sort((a,b)=>(b.severity||0)-(a.severity||0) || (b.tsUTC||0)-(a.tsUTC||0)).slice(0,2);
+    return {
+      count: arr.length,
+      high: arr.filter(x=>(x.severity||0)>=80).length,
+      lines: top.map(briefLine)
     };
-    return { last:pack(buckets.last), this:pack(buckets.this), next:pack(buckets.next) };
   };
 
-  const items = SPEECH_WATCH.applyFilters(S.speechWatch||[]);
+  const raw = S.speechWatch||[];
+  const trumpUniverse = raw.filter(x=>/trump/i.test(`${x.actor||''} ${x.title||''}`) || (x.source||'')==='x_zerohedge' || (x.source||'')==='x_trump');
+  const weekGroups = { last:[], this:[], next:[] };
+  const dayGroups = { yesterday:[], today:[], tomorrow:[] };
+  trumpUniverse.forEach(x=>{
+    const wb = weekBucket(x.tsUTC);
+    if(weekGroups[wb]) weekGroups[wb].push(x);
+    const db = dayBucket(x.tsUTC);
+    if(dayGroups[db]) dayGroups[db].push(x);
+  });
+  const weekDigest = { last:packDigest(weekGroups.last), this:packDigest(weekGroups.this), next:packDigest(weekGroups.next) };
+  const dayDigest = { yesterday:packDigest(dayGroups.yesterday), today:packDigest(dayGroups.today), tomorrow:packDigest(dayGroups.tomorrow) };
+
+  const items = SPEECH_WATCH.applyFilters(raw);
   const top = items.slice(0, 36);
-  const total = (S.speechWatch||[]).length;
-  const scheduled = (S.speechWatch||[]).filter(x=>x.watchType==='scheduled_speech').length;
-  const breaking = (S.speechWatch||[]).filter(x=>x.watchType==='breaking').length;
-  const trump = (S.speechWatch||[]).filter(x=>/trump/i.test(`${x.actor||''} ${x.title||''}`)).length;
-  const fed = (S.speechWatch||[]).filter(x=>(x.source||'').includes('fed')).length;
-  const zhTrump = (S.speechWatch||[]).filter(x=>(x.source||'')==='x_zerohedge');
-  const weekDigest = buildWeekDigest(zhTrump, MKT_CAL.getDisplayTZ());
+  const breakingItems = items.filter(x=>x.watchType==='breaking').slice(0, 14);
+  const total = raw.length;
+  const scheduled = raw.filter(x=>x.watchType==='scheduled_speech').length;
+  const breaking = raw.filter(x=>x.watchType==='breaking').length;
+  const trump = raw.filter(x=>/trump/i.test(`${x.actor||''} ${x.title||''}`)).length;
+  const fed = raw.filter(x=>(x.source||'').includes('fed')).length;
+  const zhTrump = raw.filter(x=>(x.source||'')==='x_zerohedge');
   const mode = S.swFilter.mode || 'all';
   const b = (key,label)=>`<button class="btn-sm ${mode===key?'btn-primary':''}" onclick="SW_setMode('${key}')">${label}</button>`;
   const rows = top.length ? top.map(x=>{
     const dt = new Date(x.tsUTC || Date.now());
-    const tm = dt.toLocaleString('zh-CN',{timeZone:MKT_CAL.getDisplayTZ(),month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
-    const typeBadge = x.watchType==='scheduled_speech' ? '<span class="badge b-mid">排期</span>' : '<span class="badge b-blue">突发</span>';
+    const tm = dt.toLocaleString('zh-CN',{timeZone:tz,month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
+    const typeBadge = x.watchType==='scheduled_speech' ? '<span class="badge b-mid">Scheduled</span>' : '<span class="badge b-blue">Breaking</span>';
     const actor = x.actor || ((x.source||'').includes('fed')?'Fed':/trump/i.test(x.title||'')?'Trump':'US');
     const sev = Math.round(Number(x.severity||55));
     const sourceLabel = x.source==='x_trump'?'x_trump':x.source==='x_zerohedge'?'x_zerohedge':(x.source||'');
@@ -4215,11 +4262,28 @@ function renderTrumpSpeechWatchCard(){
       </td>
     </tr>`;
   }).join('') : `<tr><td colspan="6" style="padding:16px;color:var(--muted2);text-align:center;">暂无匹配条目，可点击“刷新 Watch”。</td></tr>`;
+
+  const breakingStrip = breakingItems.length ? breakingItems.map(x=>{
+    const dt = new Date(x.tsUTC || Date.now());
+    const tm = dt.toLocaleString('en-US',{timeZone:tz,month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
+    return `<div style="min-width:320px;max-width:440px;border:1px solid var(--border);border-radius:8px;padding:8px 10px;background:rgba(74,158,240,.07);">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+        <span class="badge b-blue">Breaking</span>
+        <span class="mono" style="font-size:10px;color:var(--muted);">${esc(tm)}</span>
+      </div>
+      <div style="margin-top:6px;font-size:11px;font-weight:700;line-height:1.45;color:var(--text);">${x.url?`<a href="${esc(x.url)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">${esc(cleanTitle(x.title).slice(0,130))}</a>`:esc(cleanTitle(x.title).slice(0,130))}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;">${esc(briefLine(x).slice(0,120))}</div>
+    </div>`;
+  }).join('') : `<div style="font-size:11px;color:var(--muted2);">No breaking items under current filter.</div>`;
+
+  const weekCard = (label, rangeTxt, d)=>`<div class="mc"><div class="lbl">${label}</div><div class="val">${d.count}</div><div class="s">High Risk ${d.high} · ${rangeTxt}</div><div style="font-size:10px;color:var(--muted);line-height:1.5;margin-top:6px;">${d.lines.length?esc(d.lines.join(' ｜ ')):'No Trump update'}</div></div>`;
+  const dayCard = (label, d)=>`<div class="mc"><div class="lbl">${label}</div><div class="val">${d.count}</div><div class="s">High Risk ${d.high}</div><div style="font-size:10px;color:var(--muted);line-height:1.5;margin-top:6px;">${d.lines.length?esc(d.lines.join(' ｜ ')):'No Trump update'}</div></div>`;
+
   return `<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
       <div>
         <div class="card-title" style="margin:0;">🎙 11. Trump Watch / Speech Watch</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:4px;">来源：White House 排期、Factba.se、Fed 官方讲话页、CNN 突发补充、X(Trump + ZeroHedge-TRUMP关键词)。</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px;">Sources: White House, Factba.se, Fed official pages, CNN breaking add-on, X (Trump + ZeroHedge TRUMP keywords).</div>
       </div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
         ${b('all','全部')}
@@ -4235,15 +4299,28 @@ function renderTrumpSpeechWatchCard(){
     <div style="font-size:11px;color:${S.swError?'var(--amber)':'var(--muted)'};margin-bottom:10px;">
       当前显示 ${items.length} / 缓存 ${total} · 排期 ${scheduled} · 突发 ${breaking} · Trump ${trump} · ZH-TRUMP ${zhTrump.length} · Fed ${fed}${S.swError?` · ${esc(S.swError)}`:''}
     </div>
+
     <div class="g3" style="margin-bottom:10px;">
-      <div class="mc"><div class="lbl">上周（ZH-TRUMP）</div><div class="val">${weekDigest.last.count}</div><div class="s">高风险 ${weekDigest.last.high}</div><div style="font-size:10px;color:var(--muted);line-height:1.5;margin-top:6px;">${weekDigest.last.headlines.length?esc(weekDigest.last.headlines.join(' ｜ ')):'暂无'}</div></div>
-      <div class="mc"><div class="lbl">本周（ZH-TRUMP）</div><div class="val">${weekDigest.this.count}</div><div class="s">高风险 ${weekDigest.this.high}</div><div style="font-size:10px;color:var(--muted);line-height:1.5;margin-top:6px;">${weekDigest.this.headlines.length?esc(weekDigest.this.headlines.join(' ｜ ')):'暂无'}</div></div>
-      <div class="mc"><div class="lbl">下周（ZH-TRUMP）</div><div class="val">${weekDigest.next.count}</div><div class="s">高风险 ${weekDigest.next.high}</div><div style="font-size:10px;color:var(--muted);line-height:1.5;margin-top:6px;">${weekDigest.next.headlines.length?esc(weekDigest.next.headlines.join(' ｜ ')):'暂无（X贴子通常无未来时间）'}</div></div>
+      ${weekCard('Last Week', `${labelDate(thisWeekStart-7)} - ${labelDate(thisWeekStart-1)}`, weekDigest.last)}
+      ${weekCard('This Week', `${labelDate(thisWeekStart)} - ${labelDate(thisWeekEnd)}`, weekDigest.this)}
+      ${weekCard('Next Week', `${labelDate(thisWeekStart+7)} - ${labelDate(thisWeekStart+13)}`, weekDigest.next)}
     </div>
+    <div class="g3" style="margin-bottom:10px;">
+      ${dayCard('Yesterday', dayDigest.yesterday)}
+      ${dayCard('Today', dayDigest.today)}
+      ${dayCard('Tomorrow', dayDigest.tomorrow)}
+    </div>
+
     <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      <input value="${esc(S.swFilter.search||'')}" placeholder="搜索 Trump / Powell / briefing / remarks..." oninput="SW_setSearch(this.value)" style="min-width:280px;">
-      <span class="small-note">把 CNN 留在突发补充层，真正排期讲话优先看排期源。</span>
+      <input value="${esc(S.swFilter.search||'')}" placeholder="Search Trump / Powell / briefing / remarks..." oninput="SW_setSearch(this.value)" style="min-width:280px;">
+      <span class="small-note">Breaking stream is horizontal for quicker scanning; scheduled speeches stay in the table.</span>
     </div>
+
+    <div style="margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Breaking Stream</div>
+      <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;">${breakingStrip}</div>
+    </div>
+
     <div style="overflow-x:auto;">
       <table style="width:100%;font-size:12px;">
         <thead><tr style="background:#1a1f2c;color:var(--muted);font-size:10px;text-transform:uppercase;">
