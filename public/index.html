@@ -3512,6 +3512,14 @@ function renderMissed(){
 
 // ════ ROADMAP PAGE ════
 function renderRoadmap(){
+  if(window._roadmapEcTimer){
+    clearTimeout(window._roadmapEcTimer);
+    window._roadmapEcTimer = null;
+  }
+  if(S.charts['roadmap-ec-c']){
+    try{ S.charts['roadmap-ec-c'].destroy(); }catch(e){}
+    delete S.charts['roadmap-ec-c'];
+  }
   const ac = ga();
   if(!ac){
     document.getElementById('page-content').innerHTML=`<div class="empty">请先创建账户后再使用 Trading OS</div>`;
@@ -3843,13 +3851,28 @@ ${renderEquityNewsWatchCard()}
     window._swPoll = setInterval(()=>SPEECH_WATCH.refresh(), 5*60*1000);
   }
   if(s.ec.length>1&&window.Chart){
-    setTimeout(()=>{
+    window._roadmapEcTimer = setTimeout(()=>{
       const ctx=document.getElementById('roadmap-ec-c');
-      if(ctx){
-        const lc=s.total>=0?'#4ade80':'#f87171';
-        S.charts['roadmap-ec-c']=new window.Chart(ctx,{type:'line',data:{labels:s.ed,datasets:[{data:s.ec,borderColor:lc,backgroundColor:lc+'18',fill:true,tension:0.35,pointRadius:2,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#475569',font:{size:10},maxRotation:45,autoSkip:true,maxTicksLimit:10}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#475569',font:{size:10},callback:v=>'$'+v.toLocaleString()}}}}});
+      if(!ctx) return;
+      if(S.charts['roadmap-ec-c']){
+        try{ S.charts['roadmap-ec-c'].destroy(); }catch(e){}
       }
-    },50);
+      const lc=s.total>=0?'#4ade80':'#f87171';
+      S.charts['roadmap-ec-c']=new window.Chart(ctx,{
+        type:'line',
+        data:{labels:s.ed,datasets:[{data:s.ec,borderColor:lc,backgroundColor:lc+'18',fill:true,tension:0.35,pointRadius:2,borderWidth:2}]},
+        options:{
+          animation:false,
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{legend:{display:false}},
+          scales:{
+            x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#475569',font:{size:10},maxRotation:45,autoSkip:true,maxTicksLimit:10}},
+            y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#475569',font:{size:10},callback:v=>'$'+v.toLocaleString()}}
+          }
+        }
+      });
+    },80);
   }
 }
 
