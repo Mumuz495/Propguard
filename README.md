@@ -119,6 +119,21 @@ Gross P&L is meaningless if fees, resets, and failed accounts destroy profitabil
 - JavaScript
 - Firebase Auth
 - Firestore
+- Cloudflare Workers Static Assets
+
+---
+
+## Deployment
+
+This project can be deployed with Wrangler:
+
+```bash
+npm install
+wrangler login
+wrangler deploy
+```
+
+Cloudflare config lives in `wrangler.jsonc`.
 
 ---
 
@@ -127,6 +142,9 @@ Gross P&L is meaningless if fees, resets, and failed accounts destroy profitabil
 ```bash
 PropGuard/
 ├── index.html
+├── public/
+├── wrangler.jsonc
+├── package.json
 ├── README.md
-├── LICENSE
-└── assets/
+└── LICENSE
+```
